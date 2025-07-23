@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
-	 "koplaybook.com/backend/database"
+	"koplaybook.com/backend/database"
 	"koplaybook.com/backend/handlers"
 )
 
 func main() {
-	db := db.Init()
+	db := database.Init()
+    database.Seed(db)
+
+	
 	h := handlers.New(db)
 
  http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +23,7 @@ func main() {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     })
 
-    err := http.ListenAndServe(":5433", nil)
+    err := http.ListenAndServe(":8080", nil)
     if err != nil {
         fmt.Println("ERROR! This server can not be used at this time")
     }

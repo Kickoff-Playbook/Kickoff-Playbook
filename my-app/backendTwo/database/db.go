@@ -1,4 +1,4 @@
-package db
+package database 
 
 import (
 	"log"
@@ -16,17 +16,17 @@ func Init() *gorm.DB{
 
 	}
 
-	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
+	database, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalln("failed to connect to database", err)
 	}
 
-	err = db.AutoMigrate(&models.User{}, &models.Bookmark{}, &models.Posts{})
+	err = database.AutoMigrate(&models.User{}, &models.Bookmark{}, &models.Posts{})
 	if err != nil{
 		log.Fatalln("failed to migrate database:", err)
 	}
-	return  db
+	return  database
 }
 
 // func Seed(db *gorm.DB) {

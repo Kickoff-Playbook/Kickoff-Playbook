@@ -1,4 +1,4 @@
-package db
+package database 
 import (
 	
 	"gorm.io/gorm"
@@ -10,6 +10,7 @@ func Seed(db *gorm.DB) {
     users := []models.User{
         {FirstName: "Alice", LastName: "Smith", Location: "NY", UserAge: 30, Email: "alice@example.com", PhoneNumber: "1234567890", Password: "password1"},
         {FirstName: "Bob", LastName: "Johnson", Location: "CA", UserAge: 25, Email: "bob@example.com", PhoneNumber: "0987654321", Password: "password2"},
+        {FirstName: "Jimmy", LastName: "Jam", Location: "GA", UserAge: 40, Email: "JJ@example.com", PhoneNumber: "5647869902", Password: "pass"},
     }
     for _, user := range users {
         db.FirstOrCreate(&user, models.User{Email: user.Email})
