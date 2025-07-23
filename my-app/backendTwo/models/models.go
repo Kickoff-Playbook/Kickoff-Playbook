@@ -1,0 +1,28 @@
+package models
+
+import "time"
+
+type User struct {
+	ID uint	`json:"id" gorm:"primaryKey"`
+	FirstName string `json:"firstname"`
+	LastName string `json:"lastname"`
+	Location string `json:"location"`
+	UserAge  int `json:"userage"`
+	Email string `json:"email"`
+	PhoneNumber string `json:"phonenumber"`
+	Password string `json:"password"`
+	Posts []Posts `json:"posts" gorm:"foreignKey:UserID"`
+}
+
+type Posts struct {
+	ID uint	`json:"id" gorm:"primaryKey"`
+	UserID uint   `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	Content string `json:"content" gorm:"type:text"`
+}
+
+type Bookmark struct {
+	ID uint	`json:"id" gorm:"primaryKey"`
+	UserID uint `json:"user_id"`
+	PostID  int  `json:"post_id"`
+}
