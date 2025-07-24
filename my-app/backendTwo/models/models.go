@@ -11,7 +11,7 @@ type User struct {
 	Email string `json:"email"`
 	PhoneNumber string `json:"phonenumber"`
 	Password string `json:"password"`
-	Posts []Posts `json:"posts" gorm:"foreignKey:UserID"`
+	// Posts []Posts `json:"posts" gorm:"foreignKey:UserID"`
 }
 
 type Posts struct {

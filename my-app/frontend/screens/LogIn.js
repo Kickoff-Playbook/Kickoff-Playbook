@@ -12,8 +12,7 @@ import {
   useNavigation,
   createStaticNavigation,
 } from "@react-navigation/native";
-//
-import SignUpPage from "./SignUp";
+
 //
 export default function LogInPage() {
   //
