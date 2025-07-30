@@ -10,13 +10,23 @@ import (
 )
 
 func (h handler) CreateUser(w http.ResponseWriter, r *http.Request){
-	  var user models.User
+    // Add CORS headers
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
+    var user models.User
     if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
         http.Error(w, "Invalid input", http.StatusBadRequest)
         return
     }
     if err := h.DB.Create(&user).Error; err != nil {
-        http.Error(w, "Could not create user", http.StatusInternalServerError)
+        http.Error(w, "Could not Create User", http.StatusInternalServerError)
         return
     }
     
@@ -25,17 +35,19 @@ func (h handler) CreateUser(w http.ResponseWriter, r *http.Request){
         "id": user.ID,
         "firstname": user.FirstName,
         "lastname": user.LastName,
+        "username": user.UserName,
         "location": user.Location,
         "userage": user.UserAge,
         "email": user.Email,
         "phonenumber": user.PhoneNumber,
-        "message": "User created successfully",
+        "message": "Welcome to The Playbook",
     }
     
+    w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(response)
 }
-
+// 
 func (h handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
     // Expecting URL: /users/{id}
     idStr := strings.TrimPrefix(r.URL.Path, "/users/")
@@ -50,25 +62,46 @@ func (h handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
     }
     w.WriteHeader(http.StatusNoContent)
 }
-
+// 
 func (h handler) LoginUser(w http.ResponseWriter, r *http.Request){
-	 // Accept username or email as login, plus password
-    username := r.URL.Query().Get("username")
-    email := r.URL.Query().Get("email")
-    password := r.URL.Query().Get("password")
+    // Fix CORS headers - should allow all origins for testing
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+   
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+    
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return 
+    }
 
-    if (username == "" && email == "") || password == "" {
+    var login struct {
+        Username string `json:"username"`
+        Email    string `json:"email"`
+        Password string `json:"password"`
+    }
+    
+    if err := json.NewDecoder(r.Body).Decode(&login); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    if (login.Username == "" && login.Email == "") || login.Password == "" {
         http.Error(w, "Username or email and password required", http.StatusBadRequest)
         return
     }
 
     var user models.User
     var err error
-
-    if username != "" {
-        err = h.DB.Where("first_name = ? AND password = ?", username, password).First(&user).Error
+    
+    if login.Username != "" {
+        err = h.DB.Where("user_name = ? AND password = ?", login.Username, login.Password).First(&user).Error
     } else {
-        err = h.DB.Where("email = ? AND password = ?", email, password).First(&user).Error
+        err = h.DB.Where("email = ? AND password = ?", login.Email, login.Password).First(&user).Error
     }
 
     if err != nil {
@@ -76,6 +109,15 @@ func (h handler) LoginUser(w http.ResponseWriter, r *http.Request){
         return
     }
 
+    // Create response
+    response := map[string]interface{}{
+        "id":       user.ID,
+        "username": user.UserName,
+        "email":    user.Email,
+        "message":  "The Odds are Waiting.",
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(user)
+    json.NewEncoder(w).Encode(response)
 }

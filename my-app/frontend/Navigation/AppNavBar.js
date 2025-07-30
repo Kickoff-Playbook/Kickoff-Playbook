@@ -6,6 +6,10 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 //
 import SignUpPage from "../screens/SignUp";
 import LogInPage from "../screens/LogIn";
+import PostPage from "../screens/PostPage";
+import SportsRules from "../screens/SportsRules";
+import ResponsibleGamblingPage from "../screens/ResponsibleGambling";
+
 //
 const Tabs = createBottomTabNavigator({
   screenOptions: {
@@ -34,6 +38,40 @@ export default function NavigationBar() {
             options={{
               tabBarIcon: ({ color, size }) => (
                 <Ionicons name="log-in" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="Explore"
+            component={PostPage}
+            options={{
+              headerTitle: "Share and Discover",
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="share" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="Sports Rules & Tutorials"
+            component={SportsRules}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="book" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="RG"
+            component={ResponsibleGamblingPage}
+            options={{
+              headerTitle: "Responsible Gambling",
+
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={size}
+                  color={color}
+                />
               ),
             }}
           />

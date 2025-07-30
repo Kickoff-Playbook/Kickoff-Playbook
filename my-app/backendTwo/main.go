@@ -33,26 +33,53 @@ func main() {
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     })
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-    if r.Method == http.MethodGet {
+	http.HandleFunc("/users/login", func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodPost {
         h.LoginUser(w, r)
         return
     }
     http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 })
 
-// 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-//     w.Write([]byte("OK"))
-// })
+	// Posts routes
+    http.HandleFunc("/create/post", func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodPost {
+        h.CreatePost(w, r)
+        return
+    }
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+})
+http.HandleFunc("/get/post/", func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodGet {
+        h.GetPost(w, r)
+        return
+    }
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+})
+http.HandleFunc("/get/posts", func(w http.ResponseWriter, r *http.Request) {
+        if r.Method == http.MethodGet {
+            h.GetAllPosts(w, r)
+            return
+        }
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+    })
 
 
+http.HandleFunc("/update/post/", func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodPatch {
+        h.UpdatePost(w, r)
+        return
+    }
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+})
 
-
-
-
-
-
-
+http.HandleFunc("/delete/post/", func(w http.ResponseWriter, r *http.Request) {
+    if r.Method == http.MethodDelete {
+        h.DeletePost(w, r)
+        return
+    }
+    http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+})
 
 
 	///////////////////////////////////////

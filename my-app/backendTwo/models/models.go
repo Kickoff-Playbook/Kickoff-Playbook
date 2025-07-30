@@ -6,12 +6,13 @@ type User struct {
 	ID uint	`json:"id" gorm:"primaryKey"`
 	FirstName string `json:"firstname"`
 	LastName string `json:"lastname"`
+	UserName string `json:"username"`
 	Location string `json:"location"`
 	UserAge  int `json:"userage"`
 	Email string `json:"email"`
 	PhoneNumber string `json:"phonenumber"`
 	Password string `json:"password"`
-	// Posts []Posts `json:"posts" gorm:"foreignKey:UserID"`
+
 }
 
 type Posts struct {
