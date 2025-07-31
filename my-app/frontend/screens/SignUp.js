@@ -32,6 +32,65 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   //
   const onSignUpPress = async () => {
+    if (!firstName.trim()) {
+      alert(" The First Name is missing");
+      return;
+    }
+    if (!lastName.trim()) {
+      alert("The Last Name is missing");
+      return;
+    }
+    if (!username.trim()) {
+      alert("The Username is missing");
+      return;
+    }
+    if (!email.trim()) {
+      alert("The Email is missing");
+      return;
+    }
+    if (!email.includes("@") || !email.includes(".")) {
+      alert("Please enter a valid email address");
+      return;
+    }
+    // email validation
+    const atIndex = email.indexOf("@");
+    const dotIndex = email.lastIndexOf("."); // Fixed: was "," should be "."
+    if (atIndex > dotIndex || atIndex === 0 || dotIndex === email.length - 1) {
+      alert("Please enter a valid email address");
+      return;
+    }
+    //
+    if (!password.trim()) {
+      alert("The Password is missing");
+      return;
+    }
+    if (password.length < 8) {
+      // Fixed: removed the ! which was making the logic wrong
+      alert("The Password has to be at least 8 characters long");
+      return;
+    }
+    if (!userAge.trim()) {
+      alert("Please enter your Age");
+      return;
+    }
+    // age validation
+    const age = Number(userAge);
+    if (isNaN(age) || age < 21) {
+      // Fixed: proper logic for age validation
+      alert("New Users MUST be 21+ to use this platform");
+      return;
+    }
+    if (age > 100) {
+      alert("Please enter a valid age");
+      return;
+    }
+    // phone validation
+    if (phoneNum.trim() && phoneNum.trim().length < 10) {
+      alert("Please enter a valid phone number");
+      return;
+    }
+
+    // ^ the conditions that control log in requirements
     try {
       console.log(
         "onSignUpPress called, HandleSignUp type:",
@@ -39,14 +98,14 @@ export default function SignUpPage() {
       );
 
       const userData = {
-        firstName,
-        lastName,
-        username,
-        location,
-        userAge,
-        email,
-        phoneNum,
-        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username: username.trim(),
+        location: location.trim(),
+        userAge: userAge.trim(),
+        email: email.trim(),
+        phoneNum: phoneNum.trim(),
+        password: password.trim(),
       };
 
       console.log("Attempting to sign up user...");

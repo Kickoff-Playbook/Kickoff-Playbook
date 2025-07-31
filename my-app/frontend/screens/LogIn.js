@@ -21,6 +21,17 @@ export default function LogInPage() {
   const [password, setPassword] = useState("");
   //
   const onHandleLogInPress = async () => {
+    // Add input validation
+    if (!usernameOrEmail.trim()) {
+      alert("Please enter your username or email");
+      return;
+    }
+
+    if (!password.trim()) {
+      alert("Please enter your password");
+      return;
+    }
+
     try {
       console.log(
         "onHandleLogInPress called, HandleLogIn type:",
@@ -30,9 +41,9 @@ export default function LogInPage() {
       // Determine if input is email or username
       const isEmail = usernameOrEmail.includes("@");
       const userData = {
-        username: isEmail ? "" : usernameOrEmail,
-        email: isEmail ? usernameOrEmail : "",
-        password,
+        username: isEmail ? "" : usernameOrEmail.trim(),
+        email: isEmail ? usernameOrEmail.trim() : "",
+        password: password.trim(),
       };
 
       console.log("Attempting to login user...");
