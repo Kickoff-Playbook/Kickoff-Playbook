@@ -2,13 +2,17 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // imported app pages
 import NavigationBar from "./Navigation/AppNavBar";
 
-//
 export default function App() {
-  return <NavigationBar />;
+  return (
+    <AuthProvider>
+      <NavigationBar />
+    </AuthProvider>
+  );
 }
 
 const styles = StyleSheet.create({

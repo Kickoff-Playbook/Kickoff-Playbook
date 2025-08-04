@@ -18,6 +18,7 @@ type User struct {
 type Posts struct {
 	ID uint	`json:"id" gorm:"primaryKey"`
 	UserID uint   `json:"user_id"`
+	UserName string `json:"username"`
 	CreatedAt time.Time `json:"created_at"`
 	Content string `json:"content" gorm:"type:text"`
 }

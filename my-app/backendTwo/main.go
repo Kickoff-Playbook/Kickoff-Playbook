@@ -83,8 +83,9 @@ http.HandleFunc("/delete/post/", func(w http.ResponseWriter, r *http.Request) {
 
 
 	///////////////////////////////////////
-    err := http.ListenAndServe(":8080", nil)
+    fmt.Println("Server starting on 0.0.0.0:8080...")
+    err := http.ListenAndServe("0.0.0.0:8080", nil)
     if err != nil {
-        fmt.Println("ERROR! This server can not be used at this time")
+        fmt.Println("ERROR! This server can not be used at this time:", err)
     }
 }

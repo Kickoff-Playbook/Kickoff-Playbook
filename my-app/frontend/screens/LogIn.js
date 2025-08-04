@@ -8,29 +8,36 @@ import {
   TextInput,
   Button,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import {
   useNavigation,
   createStaticNavigation,
 } from "@react-navigation/native";
 import HandleLogIn from "../api/loginuser";
-//
+import { useAuth } from "../contexts/AuthContext";
+
 export default function LogInPage() {
-  //
+  const navigation = useNavigation();
+  const { login } = useAuth();
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   //
   const onHandleLogInPress = async () => {
     // Add input validation
     if (!usernameOrEmail.trim()) {
-      alert("Please enter your username or email");
+      Alert.alert("Error", "Please enter your username or email");
       return;
     }
 
     if (!password.trim()) {
-      alert("Please enter your password");
+      Alert.alert("Error", "Please enter your password");
       return;
     }
+
+    setIsLoading(true);
 
     try {
       console.log(
@@ -52,14 +59,25 @@ export default function LogInPage() {
       if (result && result.success) {
         console.log("Login successful!");
         console.log("User data:", result.data);
-        alert("Welcome back to Kickoff Playbook");
+
+        // Use AuthContext to set authentication state
+        const authResult = await login(result.data);
+
+        if (authResult.success) {
+          Alert.alert("Success", "Welcome back to Kickoff Playbook!");
+          // Navigation will be handled automatically by App.js based on auth state
+        } else {
+          Alert.alert("Error", "Failed to save login data");
+        }
       } else {
-        console.log("Login  failed:", result?.error || "Unknown error");
-        alert("Error: " + (result?.error || "Unknown error"));
+        console.log("Login failed:", result?.error || "Unknown error");
+        Alert.alert("Login Failed", result?.error || "Invalid credentials");
       }
     } catch (error) {
       console.log("Error in onLoginPress:", error.message);
-      alert("An unexpected error occurred: " + error.message);
+      Alert.alert("Error", "An unexpected error occurred: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
   //
@@ -91,8 +109,16 @@ export default function LogInPage() {
           />
         </View>
         {/* Button */}
-        <TouchableOpacity style={styles.button} onPress={onHandleLogInPress}>
-          <Text style={styles.buttonText}>Log In </Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={onHandleLogInPress}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Log In</Text>
+          )}
         </TouchableOpacity>
 
         {/* form end  */}
@@ -144,5 +170,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     color: "#fff",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

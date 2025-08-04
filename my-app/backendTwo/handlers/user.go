@@ -49,17 +49,49 @@ func (h handler) CreateUser(w http.ResponseWriter, r *http.Request){
 }
 // 
 func (h handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+    // Add CORS headers
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "DELETE, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+    
+    // Handle preflight OPTIONS request
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+    
     // Expecting URL: /users/{id}
     idStr := strings.TrimPrefix(r.URL.Path, "/users/")
+    
+    // Check if ID string is empty
+    if idStr == "" {
+        http.Error(w, "User ID is required", http.StatusBadRequest)
+        return
+    }
+    
     id, err := strconv.Atoi(idStr)
     if err != nil || id < 1 {
         http.Error(w, "Invalid user ID", http.StatusBadRequest)
         return
     }
+    
+    // Check if user exists before deleting
+    var user models.User
+    if err := h.DB.First(&user, id).Error; err != nil {
+        if err.Error() == "record not found" {
+            http.Error(w, "User not found", http.StatusNotFound)
+            return
+        }
+        http.Error(w, "Database error", http.StatusInternalServerError)
+        return
+    }
+    
+    // Delete the user
     if err := h.DB.Delete(&models.User{}, id).Error; err != nil {
         http.Error(w, "Could not delete user", http.StatusInternalServerError)
         return
     }
+    
     w.WriteHeader(http.StatusNoContent)
 }
 // 

@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Button,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import {
   useNavigation,
@@ -16,12 +17,13 @@ import {
 } from "@react-navigation/native";
 
 //
-
+import LogInPage from "./LogIn";
 import HandleSignUp from "../api/auth";
-//
+import { useAuth } from "../contexts/AuthContext";
+
 export default function SignUpPage() {
-  //
-  const nav = useNavigation();
+  const navigation = useNavigation();
+  const { signup } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [location, setLocation] = useState("");
@@ -114,7 +116,16 @@ export default function SignUpPage() {
       if (result && result.success) {
         console.log("Sign up successful!");
         console.log("User data:", result.data);
-        alert("User created successfully!");
+
+        // Use AuthContext to set authentication state
+        const authResult = await signup(result.data);
+
+        if (authResult.success) {
+          alert("Account created successfully! Welcome to Kickoff Playbook!");
+          // Navigation will be handled automatically by App.js based on auth state
+        } else {
+          alert("Failed to save signup data");
+        }
       } else {
         console.log("Sign up failed:", result?.error || "Unknown error");
         alert("Error: " + (result?.error || "Unknown error"));
@@ -234,6 +245,13 @@ export default function SignUpPage() {
           <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
+          {/* nav to login  */}
+          <View style={styles.loginLinkContainer}>
+            <Text style={styles.loginLinkText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <Text style={styles.loginLink}>Log In</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -299,5 +317,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     color: "#fff",
+  },
+  loginLinkContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  loginLinkText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+  },
+  loginLink: {
+    fontSize: 16,
+    color: "#1f867aff",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });

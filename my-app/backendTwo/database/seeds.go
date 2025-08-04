@@ -18,9 +18,9 @@ func Seed(db *gorm.DB) {
 
     // Seed Posts
     posts := []models.Posts{
-        {UserID: 1, Content:  "New to sports betting? Start with moneyline bets! You're simply picking the winner of the game. No point spreads or complicated odds."},
-        {UserID: 2, Content: "Always manage your bankroll. Only bet what you can afford to lose, and consider using units (like 1% of your balance) to keep things consistent."},
-        {UserID: 3, Content: "Understand the odds: +150 means you win $150 on a $100 bet. -150 means you need to bet $150 to win $100. Mastering this is key to long-term success."},
+        {UserID: 1, UserName: "ASmith", Content:  "New to sports betting? Start with moneyline bets! You're simply picking the winner of the game. No point spreads or complicated odds."},
+        {UserID: 2, UserName: "BJohnson", Content: "Always manage your bankroll. Only bet what you can afford to lose, and consider using units (like 1% of your balance) to keep things consistent."},
+        {UserID: 3, UserName: "JJammmz",Content: "Understand the odds: +150 means you win $150 on a $100 bet. -150 means you need to bet $150 to win $100. Mastering this is key to long-term success."},
         
     }
     for _, post := range posts {

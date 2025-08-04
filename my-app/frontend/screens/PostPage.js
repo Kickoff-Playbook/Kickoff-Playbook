@@ -12,7 +12,19 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Platform,
+  Alert,
 } from "react-native";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  URL_CONFIGS,
+  getBackendURLs,
+  saveWorkingURLConfig,
+  switchURLConfig,
+  tryMultipleURLs,
+  getCurrentURLConfig,
+} from "../utils/urlConfig";
+
 // Individual Post Item Component
 function PostItem({ post }) {
   // Format timestamp to readable format
@@ -28,21 +40,13 @@ function PostItem({ post }) {
     return date.toLocaleDateString();
   };
 
-  // Get username based on user_id (you can enhance this later with user lookup)
-  const getUserName = (userId) => {
-    const userMap = {
-      1: "ASmith",
-      2: "BJohnson",
-      3: "JJammmz",
-    };
-    return userMap[userId] || `User ${userId}`;
-  };
-
   return (
     <View style={styles.postContainer}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.username}>{getUserName(post.user_id)}</Text>
+        <Text style={styles.usernameOne}>
+          {post.username || post.user_name || `User ${post.user_id}`}
+        </Text>
         <Text style={styles.timestamp}>{formatTimestamp(post.created_at)}</Text>
       </View>
 
@@ -64,17 +68,53 @@ function PostItem({ post }) {
 
 //
 export default function PostPage() {
+  const { user } = useAuth(); // Get current user from context
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
+  const [currentURLConfig, setCurrentURLConfig] = useState("auto");
+  const [showURLSwitcher, setShowURLSwitcher] = useState(false);
+
+  // Load current URL configuration on component mount
+  useEffect(() => {
+    loadCurrentURLConfig();
+  }, []);
+
+  const loadCurrentURLConfig = async () => {
+    try {
+      const savedConfig = await AsyncStorage.getItem("currentURLConfig");
+      if (savedConfig) {
+        setCurrentURLConfig(savedConfig);
+      }
+    } catch (error) {
+      console.log("Error loading URL config:", error);
+    }
+  };
+
+  // Function to switch URL configuration
+  const handleURLSwitch = async (configKey) => {
+    const success = await switchURLConfig(configKey);
+    if (success) {
+      setCurrentURLConfig(configKey);
+      setShowURLSwitcher(false);
+      // Refresh posts with new URL configuration
+      setLoading(true);
+      fetchPosts();
+      Alert.alert(
+        "URL Configuration Changed",
+        `Switched to: ${URL_CONFIGS[configKey]?.name}`,
+        [{ text: "OK" }]
+      );
+    }
+  };
 
   // Fetch posts from your backend
   const fetchPosts = async () => {
     try {
-      const response = await fetch("http://10.0.13.209:8080/get/posts");
+      const response = await tryMultipleURLs("/get/posts");
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -100,13 +140,14 @@ export default function PostPage() {
     }
 
     try {
-      const response = await fetch("http://10.0.13.209:8080/create/post", {
+      const response = await tryMultipleURLs("/create/post", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user_id: 1, // You can replace this with actual user ID
+          user_id: user?.id || 1, // Use authenticated user ID
+          username: user?.username || "Anonymous", // Include username
           content: newPostContent.trim(),
         }),
       });
@@ -165,10 +206,6 @@ export default function PostPage() {
   //
   return (
     <View style={styles.container}>
-      {/* <View style={styles.pageHeader}>
-        <Text style={styles.pageTitle}>The Huddle</Text>
-      </View> */}
-
       <FlatList
         data={posts}
         renderItem={({ item }) => <PostItem post={item} />}
@@ -194,10 +231,60 @@ export default function PostPage() {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => setShowCreateModal(true)}
+        onLongPress={() => setShowURLSwitcher(true)}
         activeOpacity={0.8}
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+
+      {/* URL Switcher Modal */}
+      <Modal
+        visible={showURLSwitcher}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowURLSwitcher(false)}
+      >
+        <View style={styles.urlModalContainer}>
+          <View style={styles.urlModalHeader}>
+            <TouchableOpacity onPress={() => setShowURLSwitcher(false)}>
+              <Text style={styles.modalCancelButton}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Switch Backend URL</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <View style={styles.urlModalContent}>
+            <Text style={styles.urlModalDescription}>
+              Current: {URL_CONFIGS[currentURLConfig]?.name}
+            </Text>
+
+            {Object.entries(URL_CONFIGS).map(([key, config]) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.urlOption,
+                  currentURLConfig === key && styles.urlOptionActive,
+                ]}
+                onPress={() => handleURLSwitch(key)}
+              >
+                <Text
+                  style={[
+                    styles.urlOptionText,
+                    currentURLConfig === key && styles.urlOptionTextActive,
+                  ]}
+                >
+                  {config.name}
+                </Text>
+                <Text style={styles.urlOptionURL}>{config.urls[0]}</Text>
+              </TouchableOpacity>
+            ))}
+
+            <Text style={styles.urlModalTip}>
+              💡 Tip: Long press the + button to access this switcher
+            </Text>
+          </View>
+        </View>
+      </Modal>
 
       {/* Create Post Modal */}
       <Modal
@@ -304,7 +391,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  username: {
+  usernameOne: {
     fontWeight: "bold",
     fontSize: 16,
     color: "#333",
@@ -440,5 +527,62 @@ const styles = StyleSheet.create({
   },
   disabledButtonText: {
     opacity: 0.5,
+  },
+  // URL Switcher Modal Styles
+  urlModalContainer: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
+  urlModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  urlModalContent: {
+    padding: 20,
+  },
+  urlModalDescription: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  urlOption: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#e0e0e0",
+  },
+  urlOptionActive: {
+    borderColor: "#007AFF",
+    backgroundColor: "#f0f8ff",
+  },
+  urlOptionText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  urlOptionTextActive: {
+    color: "#007AFF",
+  },
+  urlOptionURL: {
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "monospace",
+  },
+  urlModalTip: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 20,
+    fontStyle: "italic",
   },
 });

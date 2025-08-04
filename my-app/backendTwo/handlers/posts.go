@@ -40,6 +40,7 @@ func (h handler) CreatePost(w http.ResponseWriter, r *http.Request){
     response := map[string]interface{}{
         "id":         post.ID,
         "user_id":    post.UserID,
+        "username":    post.UserName,
         "content":    post.Content,
         "created_at": post.CreatedAt,
         "message":    "Post created successfully",

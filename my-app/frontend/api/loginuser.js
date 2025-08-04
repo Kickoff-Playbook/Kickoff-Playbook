@@ -1,19 +1,11 @@
 import { Platform } from "react-native";
-
-// Get the correct base URL based on platform
-const getBaseURL = () => {
-  if (__DEV__) {
-    if (Platform.OS === "ios") {
-      // iOS Simulator - use the actual IP address that works
-      return "http://10.0.13.209:8080";
-    } else if (Platform.OS === "android") {
-      // Android emulator needs 10.0.2.2 to access host machine's localhost
-      return "http://10.0.2.2:8080";
-    }
-  }
-  // Production URL would go here - updated IP
-  return "http://10.0.13.209:8080";
-};
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  URL_CONFIGS,
+  getBackendURLs,
+  saveWorkingURLConfig,
+  tryMultipleURLs,
+} from "../utils/urlConfig";
 
 export default async function HandleLogIn(userData) {
   console.log("HandleLogIn function called"); // Debug log
@@ -36,12 +28,7 @@ export default async function HandleLogIn(userData) {
     password: userData.password,
   };
 
-  const baseURL = getBaseURL();
-  const url = `${baseURL}/users/login`; // Changed from /users to /users/login
-
   console.log(`Platform: ${Platform.OS}`);
-  console.log(`Base URL: ${baseURL}`);
-  console.log(`Full URL: ${url}`);
 
   const fetchOptions = {
     method: "POST",
@@ -51,22 +38,10 @@ export default async function HandleLogIn(userData) {
     body: JSON.stringify(user),
   };
 
-  // Add timeout to prevent hanging requests
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(
-      () => reject(new Error("Request timeout - please check your connection")),
-      10000
-    )
-  );
-
   try {
-    console.log(`Trying URL: ${url}`);
     console.log(`User data:`, JSON.stringify(user, null, 2));
 
-    const response = await Promise.race([
-      fetch(url, fetchOptions),
-      timeoutPromise,
-    ]);
+    const response = await tryMultipleURLs("/users/login", fetchOptions);
 
     console.log(`Response status: ${response.status}`);
 
@@ -88,12 +63,23 @@ export default async function HandleLogIn(userData) {
     }
 
     const data = await response.json();
-    console.log(`Login success with URL: ${url}, Status: ${response.status}`);
+
+    // Store user data in AsyncStorage for persistence
+    try {
+      await AsyncStorage.setItem("user", JSON.stringify(data));
+      await AsyncStorage.setItem("isAuthenticated", "true");
+      console.log("✅ Login: User data stored in AsyncStorage successfully");
+    } catch (storageError) {
+      console.log("⚠️ Login AsyncStorage error:", storageError.message);
+      // Continue anyway - the login was successful
+    }
+
+    console.log(`Login success! Status: ${response.status}`);
     console.log(`Response data:`, data);
 
     return { success: true, data };
   } catch (error) {
-    console.log(`Login failed with URL: ${url}, Error: ${error.message}`);
+    console.log(`Login failed with all URLs, Error: ${error.message}`);
 
     // Handle specific error types
     if (error.message.includes("timeout")) {

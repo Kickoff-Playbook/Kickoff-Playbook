@@ -1,33 +1,11 @@
 import { Platform } from "react-native";
-
-// Get the correct base URL based on platform
-const getBaseURL = () => {
-  if (__DEV__) {
-    if (Platform.OS === "ios") {
-      // iOS Simulator - use the actual IP address that works
-      return "http://10.0.13.209:8080";
-    } else if (Platform.OS === "android") {
-      // Android emulator needs 10.0.2.2 to access host machine's localhost
-      return "http://10.0.2.2:8080";
-    }
-  }
-  // Production URL would go here - updated IP
-  return "http://10.0.13.209:8080";
-};
-
-// Fallback URLs to try if primary fails
-const getFallbackURLs = () => {
-  const urls = [];
-  if (Platform.OS === "ios") {
-    urls.push("http://10.0.13.209:8080");
-    urls.push("http://localhost:8080");
-    urls.push("http://127.0.0.1:8080");
-  } else if (Platform.OS === "android") {
-    urls.push("http://10.0.2.2:8080");
-    urls.push("http://10.0.13.209:8080");
-  }
-  return urls;
-};
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  URL_CONFIGS,
+  getBackendURLs,
+  saveWorkingURLConfig,
+  tryMultipleURLs,
+} from "../utils/urlConfig";
 
 export default async function HandleSignUp(userData) {
   console.log("handleSignUp function called"); // Debug log
@@ -43,12 +21,7 @@ export default async function HandleSignUp(userData) {
     password: userData.password,
   };
 
-  const baseURL = getBaseURL();
-  const url = `${baseURL}/users`;
-
   console.log(`Platform: ${Platform.OS}`);
-  console.log(`Base URL: ${baseURL}`);
-  console.log(`Full URL: ${url}`);
 
   const fetchOptions = {
     method: "POST",
@@ -59,10 +32,9 @@ export default async function HandleSignUp(userData) {
   };
 
   try {
-    console.log(`Trying URL: ${url}`);
     console.log(`User data:`, JSON.stringify(user, null, 2));
 
-    const response = await fetch(url, fetchOptions);
+    const response = await tryMultipleURLs("/users", fetchOptions);
     console.log(`Response status: ${response.status}`);
 
     if (!response.ok) {
@@ -72,12 +44,23 @@ export default async function HandleSignUp(userData) {
     }
 
     const data = await response.json();
-    console.log(`Success with URL: ${url}, Status: ${response.status}`);
+
+    // Store user data in AsyncStorage for persistence
+    try {
+      await AsyncStorage.setItem("user", JSON.stringify(data));
+      await AsyncStorage.setItem("isAuthenticated", "true");
+      console.log("✅ User data stored in AsyncStorage successfully");
+    } catch (storageError) {
+      console.log("⚠️ AsyncStorage error:", storageError.message);
+      // Continue anyway - the signup was successful
+    }
+
+    console.log(`Signup successful! Status: ${response.status}`);
     console.log(`Response data:`, data);
 
     return { success: true, data };
   } catch (error) {
-    console.log(`Failed with URL: ${url}, Error: ${error.message}`);
+    console.log(`Signup failed with error: ${error.message}`);
     return { success: false, error: error.message };
   }
 }
