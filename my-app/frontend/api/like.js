@@ -16,15 +16,17 @@ const getBaseURL = () => {
   return "http://192.168.1.73:8080";
 };
 
-// Create a new comment
-export const createComment = async (commentData) => {
+// Toggle like on a post
+export const toggleLike = async (postId, userId) => {
   try {
-    const response = await tryMultipleURLs("/create/comment", {
+    const response = await tryMultipleURLs(`/toggle/like/${postId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(commentData),
+      body: JSON.stringify({
+        user_id: userId,
+      }),
     });
 
     if (!response.ok) {
@@ -33,15 +35,20 @@ export const createComment = async (commentData) => {
 
     return await response.json();
   } catch (error) {
-    console.error("Error creating comment:", error);
+    console.error("Error toggling like:", error);
     throw error;
   }
 };
 
-// Get comments for a specific post
-export const getCommentsByPost = async (postId) => {
+// Get likes for a specific post
+export const getLikesByPost = async (postId, userId = null) => {
   try {
-    const response = await tryMultipleURLs(`/get/comments/${postId}`);
+    let url = `/get/likes/${postId}`;
+    if (userId) {
+      url += `?user_id=${userId}`;
+    }
+
+    const response = await tryMultipleURLs(url);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -49,27 +56,9 @@ export const getCommentsByPost = async (postId) => {
 
     return await response.json();
   } catch (error) {
-    console.error("Error fetching comments:", error);
+    console.error("Error fetching likes:", error);
     throw error;
   }
 };
 
-// Delete a comment
-export const deleteComment = async (commentId) => {
-  try {
-    const response = await tryMultipleURLs(`/delete/comment/${commentId}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error deleting comment:", error);
-    throw error;
-  }
-};
-
-export default { createComment, getCommentsByPost, deleteComment };
+export default { toggleLike, getLikesByPost };

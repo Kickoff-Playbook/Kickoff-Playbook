@@ -8,9 +8,11 @@ import {
 } from "react-native";
 import { useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function GolfRules() {
   const [expandedRule, setExpandedRule] = useState(null);
+  const navigation = useNavigation();
 
   const toggleExpanded = (ruleNumber) => {
     setExpandedRule(expandedRule === ruleNumber ? null : ruleNumber);
@@ -51,6 +53,15 @@ export default function GolfRules() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>⛳ Golf Rules</Text>
         <Text style={styles.headerSubtitle}>
@@ -148,5 +159,23 @@ const styles = StyleSheet.create({
   },
   arrow: {
     marginLeft: 10,
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 1000,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backButtonText: {
+    color: "#fff",
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

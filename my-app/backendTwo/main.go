@@ -30,6 +30,10 @@ func main() {
             h.DeleteUser(w, r)
             return
         }
+        if r.Method == http.MethodPut {
+            h.UpdateUser(w, r)
+            return
+        }
         http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
     })
 
@@ -80,6 +84,73 @@ http.HandleFunc("/delete/post/", func(w http.ResponseWriter, r *http.Request) {
     }
     http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 })
+
+	// Comment routes
+	http.HandleFunc("/create/comment", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			h.CreateComment(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/get/comments/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			h.GetCommentsByPost(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/delete/comment/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			h.DeleteComment(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	// Like routes
+	http.HandleFunc("/toggle/like/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			h.ToggleLike(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/get/likes/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			h.GetLikesByPost(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	// Bookmark routes
+	http.HandleFunc("/toggle/bookmark/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			h.ToggleBookmark(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/get/bookmarks/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			h.GetBookmarksByPost(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	http.HandleFunc("/get/user/bookmarks/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			h.GetUserBookmarks(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
 
 
 	///////////////////////////////////////

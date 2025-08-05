@@ -99,6 +99,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = async (updatedUserData) => {
+    try {
+      console.log("AuthContext: Updating user", updatedUserData);
+
+      // Merge existing user data with updated data
+      const newUserData = { ...user, ...updatedUserData };
+
+      // Store updated user data
+      await AsyncStorage.setItem("user", JSON.stringify(newUserData));
+
+      setUser(newUserData);
+
+      console.log("AuthContext: User updated successfully");
+      return { success: true };
+    } catch (error) {
+      console.error("Error during user update:", error);
+      return { success: false, error: "Failed to update user data" };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -106,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     signup,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

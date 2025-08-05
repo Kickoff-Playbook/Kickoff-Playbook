@@ -1,4 +1,4 @@
-package database 
+package database
 
 import (
 	"log"
@@ -22,7 +22,7 @@ func Init() *gorm.DB{
 		log.Fatalln("failed to connect to database", err)
 	}
 
-	err = database.AutoMigrate(&models.User{}, &models.Bookmark{}, &models.Posts{})
+	err = database.AutoMigrate(&models.User{}, &models.Bookmark{}, &models.Posts{}, &models.Comment{}, &models.Like{})
 	if err != nil{
 		log.Fatalln("failed to migrate database:", err)
 	}

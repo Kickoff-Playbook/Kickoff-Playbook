@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 //
 import SportsPage from "./sportsPages/SportsPage";
-import Teampage from "./sportsPages/Teampage";
 import PlayerStats from "./sportsPages/PlayerStats";
 import FootballRules from "./sportsPages/FootballRules";
 import BasketballRules from "./sportsPages/BasketballRules";
@@ -37,14 +36,6 @@ export default function SportsRules() {
         options={{
           headerShown: false,
           title: "Sports Page",
-        }}
-      />
-      <Stack.Screen
-        name="Teampage"
-        component={Teampage}
-        options={{
-          headerShown: false,
-          title: "NFL Teams",
         }}
       />
       <Stack.Screen

@@ -14,7 +14,11 @@ import {
   RefreshControl,
   Platform,
   Alert,
+  ScrollView,
+  KeyboardAvoidingView,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../contexts/AuthContext";
 import {
   URL_CONFIGS,
@@ -24,9 +28,16 @@ import {
   tryMultipleURLs,
   getCurrentURLConfig,
 } from "../utils/urlConfig";
+import {
+  createComment,
+  getCommentsByPost,
+  deleteComment,
+} from "../api/comment";
+import { toggleLike, getLikesByPost } from "../api/like";
+import { toggleBookmark, getBookmarksByPost } from "../api/bookmark";
 
 // Individual Post Item Component
-function PostItem({ post }) {
+function PostItem({ post, onCommentPress, onLikePress, onBookmarkPress }) {
   // Format timestamp to readable format
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "Unknown time";
@@ -55,13 +66,89 @@ function PostItem({ post }) {
 
       {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.action}>
-          <Text style={styles.actionText}>Bookmark</Text>
+        <TouchableOpacity
+          style={styles.action}
+          onPress={() => onLikePress(post)}
+        >
+          <Ionicons
+            name={post.isLiked ? "heart" : "heart-outline"}
+            size={20}
+            color={post.isLiked ? "#ff4444" : "#007bff"}
+          />
+          <Text style={[styles.actionText, post.isLiked && styles.likedText]}>
+            {post.likeCount || 0} {post.likeCount === 1 ? "Like" : "Likes"}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.action}>
+        <TouchableOpacity
+          style={styles.action}
+          onPress={() => onBookmarkPress(post)}
+        >
+          <Ionicons
+            name={post.isBookmarked ? "bookmark" : "bookmark-outline"}
+            size={20}
+            color={post.isBookmarked ? "#ffa500" : "#007bff"}
+          />
+          <Text
+            style={[
+              styles.actionText,
+              post.isBookmarked && styles.bookmarkedText,
+            ]}
+          >
+            Bookmark
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.action}
+          onPress={() => onCommentPress(post)}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color="#007bff" />
           <Text style={styles.actionText}>Comment</Text>
         </TouchableOpacity>
       </View>
+    </View>
+  );
+}
+
+// Individual Comment Item Component
+function CommentItem({ comment, onDeleteComment }) {
+  // Format timestamp to readable format
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Unknown time";
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <View style={styles.commentItem}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.commentUsername}>
+          {comment.username || comment.user_name || `User ${comment.user_id}`}
+        </Text>
+        <View style={styles.commentHeaderRight}>
+          <Text style={styles.commentTimestamp}>
+            {formatTimestamp(comment.created_at)}
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => onDeleteComment(comment.id)}
+          >
+            <Ionicons name="trash-outline" size={16} color="#ff4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.commentContent}>{comment.content}</Text>
+      {comment.image_url && (
+        <Image
+          source={{ uri: comment.image_url }}
+          style={styles.commentImage}
+        />
+      )}
     </View>
   );
 }
@@ -77,6 +164,14 @@ export default function PostPage() {
   const [newPostContent, setNewPostContent] = useState("");
   const [currentURLConfig, setCurrentURLConfig] = useState("auto");
   const [showURLSwitcher, setShowURLSwitcher] = useState(false);
+
+  // Comment modal states - simplified to single modal
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [commentContent, setCommentContent] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
 
   // Load current URL configuration on component mount
   useEffect(() => {
@@ -122,7 +217,39 @@ export default function PostPage() {
 
       const data = await response.json();
       console.log("Fetched posts:", data); // Debug log
-      setPosts(data || []); // Ensure it's always an array
+
+      // Fetch like and bookmark information for each post
+      const postsWithLikesAndBookmarks = await Promise.all(
+        (data || []).map(async (post) => {
+          try {
+            const [likes, bookmarks] = await Promise.all([
+              getLikesByPost(post.id, user?.id || 1),
+              getBookmarksByPost(post.id, user?.id || 1),
+            ]);
+            return {
+              ...post,
+              likeCount: likes.like_count || 0,
+              isLiked: likes.user_liked || false,
+              bookmarkCount: bookmarks.bookmark_count || 0,
+              isBookmarked: bookmarks.user_bookmarked || false,
+            };
+          } catch (err) {
+            console.error(
+              `Error fetching likes/bookmarks for post ${post.id}:`,
+              err
+            );
+            return {
+              ...post,
+              likeCount: 0,
+              isLiked: false,
+              bookmarkCount: 0,
+              isBookmarked: false,
+            };
+          }
+        })
+      );
+
+      setPosts(postsWithLikesAndBookmarks); // Ensure it's always an array with like and bookmark data
       setError(null);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -170,6 +297,168 @@ export default function PostPage() {
     }
   };
 
+  // Handle opening comment modal
+  const handleCommentPress = async (post) => {
+    setSelectedPost(post);
+    setCommentContent("");
+    setSelectedImage(null);
+    setLoadingComments(true);
+    setShowCommentModal(true);
+
+    try {
+      const postComments = await getCommentsByPost(post.id);
+      setComments(postComments || []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      // Don't show error alert, just show empty comments
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // Handle image selection
+  const handleImageSelect = () => {
+    Alert.alert("Select Image", "Choose an option", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Camera", onPress: () => openImagePicker("camera") },
+      { text: "Photo Library", onPress: () => openImagePicker("library") },
+    ]);
+  };
+
+  // Simulate image picker (in a real app, you'd use react-native-image-picker)
+  const openImagePicker = (source) => {
+    // This is a placeholder - in a real app you would use react-native-image-picker
+    Alert.alert("Image Picker", `${source} functionality would open here`);
+    // For demo purposes, set a placeholder image
+    setSelectedImage(
+      "https://via.placeholder.com/200x200.png?text=Selected+Image"
+    );
+  };
+
+  // Remove selected image
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+  };
+
+  // Handle submitting comment
+  const handleSubmitComment = async () => {
+    if (!commentContent.trim() && !selectedImage) {
+      Alert.alert("Error", "Please enter a comment or select an image");
+      return;
+    }
+
+    try {
+      const commentData = {
+        post_id: selectedPost.id,
+        user_id: user?.id || 1,
+        username: user?.username || "Anonymous",
+        content: commentContent.trim(),
+        image_url: selectedImage || "",
+      };
+
+      console.log("Submitting comment:", commentData);
+
+      const newComment = await createComment(commentData);
+      console.log("Comment created:", newComment);
+
+      // Reset form
+      setCommentContent("");
+      setSelectedImage(null);
+
+      // Refresh comments to show the new one
+      const updatedComments = await getCommentsByPost(selectedPost.id);
+      setComments(updatedComments || []);
+
+      Alert.alert("Success", "Comment posted successfully!");
+    } catch (err) {
+      console.error("Error posting comment:", err);
+      Alert.alert("Error", "Failed to post comment. Please try again.");
+    }
+  };
+
+  // Handle deleting a comment
+  const handleDeleteComment = async (commentId) => {
+    Alert.alert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteComment(commentId);
+
+              // Refresh comments to remove the deleted one
+              const updatedComments = await getCommentsByPost(selectedPost.id);
+              setComments(updatedComments || []);
+
+              Alert.alert("Success", "Comment deleted successfully!");
+            } catch (err) {
+              console.error("Error deleting comment:", err);
+              Alert.alert(
+                "Error",
+                "Failed to delete comment. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle liking/unliking a post
+  const handleLikePress = async (post) => {
+    try {
+      const result = await toggleLike(post.id, user?.id || 1);
+
+      // Update the posts state to reflect the like status
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === post.id
+            ? {
+                ...p,
+                isLiked: result.liked,
+                likeCount: result.liked
+                  ? (p.likeCount || 0) + 1
+                  : Math.max((p.likeCount || 0) - 1, 0),
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling like:", err);
+      Alert.alert("Error", "Failed to update like. Please try again.");
+    }
+  };
+
+  // Handle bookmarking/unbookmarking a post
+  const handleBookmarkPress = async (post) => {
+    try {
+      const result = await toggleBookmark(post.id, user?.id || 1);
+
+      // Update the posts state to reflect the bookmark status
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === post.id
+            ? {
+                ...p,
+                isBookmarked: result.bookmarked,
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error("Error toggling bookmark:", err);
+      Alert.alert("Error", "Failed to update bookmark. Please try again.");
+    }
+  };
+
   // Fetch posts when component mounts
 
   // Fetch posts when component mounts
@@ -208,7 +497,14 @@ export default function PostPage() {
     <View style={styles.container}>
       <FlatList
         data={posts}
-        renderItem={({ item }) => <PostItem post={item} />}
+        renderItem={({ item }) => (
+          <PostItem
+            post={item}
+            onCommentPress={handleCommentPress}
+            onLikePress={handleLikePress}
+            onBookmarkPress={handleBookmarkPress}
+          />
+        )}
         keyExtractor={(item) => item.id.toString()}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -348,6 +644,138 @@ export default function PostPage() {
           </View>
         </View>
       </Modal>
+
+      {/* Comment Modal - Combined View and Create */}
+      <Modal
+        visible={showCommentModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCommentModal(false)}
+      >
+        <View style={styles.commentModalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCommentModal(false)}>
+              <Text style={styles.modalCancelButton}>Close</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Comments</Text>
+            <TouchableOpacity
+              onPress={handleSubmitComment}
+              disabled={!commentContent.trim() && !selectedImage}
+            >
+              <Text
+                style={[
+                  styles.modalPostButton,
+                  !commentContent.trim() &&
+                    !selectedImage &&
+                    styles.disabledButtonText,
+                ]}
+              >
+                Post
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.commentModalContent}>
+            {/* Original Post Preview */}
+            {selectedPost && (
+              <View style={styles.originalPostPreview}>
+                <Text style={styles.originalPostUsername}>
+                  {selectedPost.username ||
+                    selectedPost.user_name ||
+                    `User ${selectedPost.user_id}`}
+                </Text>
+                <Text style={styles.originalPostContent} numberOfLines={3}>
+                  {selectedPost.content}
+                </Text>
+              </View>
+            )}
+
+            {/* Existing Comments Section */}
+            <View style={styles.commentsSection}>
+              <Text style={styles.commentsSectionTitle}>
+                Comments ({comments.length})
+              </Text>
+
+              {loadingComments ? (
+                <View style={styles.loadingCommentsContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.loadingCommentsText}>
+                    Loading comments...
+                  </Text>
+                </View>
+              ) : comments.length > 0 ? (
+                <FlatList
+                  data={comments}
+                  renderItem={({ item }) => (
+                    <CommentItem
+                      comment={item}
+                      onDeleteComment={handleDeleteComment}
+                    />
+                  )}
+                  keyExtractor={(item) => item.id.toString()}
+                  style={styles.commentsList}
+                  showsVerticalScrollIndicator={false}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.commentSeparator} />
+                  )}
+                />
+              ) : (
+                <View style={styles.emptyCommentsContainer}>
+                  <Text style={styles.emptyCommentsText}>No comments yet</Text>
+                  <Text style={styles.emptyCommentsSubtext}>
+                    Be the first to comment!
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Create Comment Section */}
+            <View style={styles.createCommentSection}>
+              <Text style={styles.createCommentTitle}>Add a comment</Text>
+
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Write your comment..."
+                value={commentContent}
+                onChangeText={setCommentContent}
+                multiline
+                maxLength={300}
+              />
+
+              <Text style={styles.commentCharacterCount}>
+                {commentContent.length}/300
+              </Text>
+
+              {/* Image Selection */}
+              <View style={styles.imageSection}>
+                <TouchableOpacity
+                  style={styles.imageSelectButton}
+                  onPress={handleImageSelect}
+                >
+                  <Ionicons name="image-outline" size={20} color="#007AFF" />
+                  <Text style={styles.imageSelectText}>Add Photo</Text>
+                </TouchableOpacity>
+
+                {/* Selected Image Preview */}
+                {selectedImage && (
+                  <View style={styles.selectedImageContainer}>
+                    <Image
+                      source={{ uri: selectedImage }}
+                      style={styles.selectedImage}
+                    />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={removeSelectedImage}
+                    >
+                      <Ionicons name="close-circle" size={20} color="#ff4444" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -428,6 +856,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#007bff",
     marginLeft: 6,
+  },
+  likedText: {
+    color: "#ff4444",
+    fontWeight: "600",
+  },
+  bookmarkedText: {
+    color: "#ffa500",
+    fontWeight: "600",
   },
   centerContainer: {
     flex: 1,
@@ -584,5 +1020,193 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
     fontStyle: "italic",
+  },
+
+  // Comment Modal Styles - Updated for combined view
+  commentModalContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  commentModalContent: {
+    flex: 1,
+    padding: 15,
+  },
+  originalPostPreview: {
+    backgroundColor: "#f8f9fa",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: "#007AFF",
+  },
+  originalPostUsername: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  originalPostContent: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+
+  // Comments Section Styles
+  commentsSection: {
+    flex: 1,
+    marginBottom: 15,
+  },
+  commentsSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 10,
+  },
+  commentsList: {
+    maxHeight: 200,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 5,
+  },
+  loadingCommentsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  loadingCommentsText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: "#666",
+  },
+  emptyCommentsContainer: {
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+  },
+  emptyCommentsText: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+  },
+  emptyCommentsSubtext: {
+    fontSize: 12,
+    color: "#999",
+  },
+
+  // Create Comment Section Styles
+  createCommentSection: {
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingTop: 15,
+  },
+  createCommentTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 10,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: "top",
+    marginBottom: 8,
+  },
+  commentCharacterCount: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "right",
+    marginBottom: 15,
+  },
+  imageSection: {
+    marginBottom: 15,
+  },
+  imageSelectButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+  },
+  imageSelectText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "500",
+  },
+  selectedImageContainer: {
+    position: "relative",
+    marginTop: 10,
+    alignSelf: "center",
+  },
+  selectedImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+  },
+
+  // Comment Item Styles
+  commentItem: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginVertical: 2,
+    borderRadius: 8,
+  },
+  commentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  commentUsername: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#333",
+  },
+  commentTimestamp: {
+    fontSize: 11,
+    color: "#999",
+  },
+  commentHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  deleteButton: {
+    padding: 4,
+    borderRadius: 4,
+  },
+  commentContent: {
+    fontSize: 14,
+    color: "#444",
+    lineHeight: 18,
+  },
+  commentImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  commentSeparator: {
+    height: 1,
+    backgroundColor: "#f0f0f0",
+    marginVertical: 2,
   },
 });

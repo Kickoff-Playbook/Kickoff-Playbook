@@ -24,7 +24,25 @@ type Posts struct {
 }
 
 type Bookmark struct {
-	ID uint	`json:"id" gorm:"primaryKey"`
+	ID uint `json:"id" gorm:"primaryKey"`
 	UserID uint `json:"user_id"`
-	PostID  int  `json:"post_id"`
+	PostID uint `json:"post_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Comment struct {
+	ID uint	`json:"id" gorm:"primaryKey"`
+	PostID uint `json:"post_id"`
+	UserID uint `json:"user_id"`
+	UserName string `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	Content string `json:"content" gorm:"type:text"`
+	ImageURL string `json:"image_url,omitempty"`
+}
+
+type Like struct {
+	ID uint `json:"id" gorm:"primaryKey"`
+	PostID uint `json:"post_id"`
+	UserID uint `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
 }

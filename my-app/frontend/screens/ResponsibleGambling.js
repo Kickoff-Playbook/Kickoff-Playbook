@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useState } from "react";
+import { colors, commonStyles } from "../utils/theme";
 import Ionicons from "react-native-vector-icons/Ionicons";
 //
 export default function ResponsibleGamblingPage() {
@@ -55,6 +56,15 @@ export default function ResponsibleGamblingPage() {
         <View>
           <Text></Text>
         </View>
+
+        {/* Footer Warning */}
+        <View style={styles.footerWarning}>
+          <Text style={styles.warningText}>
+            ⚠️ GAMBLING WARNING: Gambling can be addictive. Play responsibly. If
+            you or someone you know has a gambling problem, please call
+            1-800-GAMBLER.
+          </Text>
+        </View>
       </ScrollView>
     </>
   );
@@ -63,30 +73,30 @@ export default function ResponsibleGamblingPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#7ed4f5ff",
+    backgroundColor: colors.background,
   },
   header: {
     margin: 10,
-    padding: 5,
-    borderColor: "#20900cff",
-    backgroundColor: "#e9eef3ff",
-    borderWidth: 5,
-    borderRadius: 10,
-
-    backgroundColor: "#e9eef3ff",
+    padding: 16,
+    borderColor: colors.accent,
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderRadius: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-
   caption: {
-    fontWeight: "bold",
-    fontSize: 20,
+    ...commonStyles.text.subheading,
     textAlign: "center",
   },
   explanation: {
+    ...commonStyles.text.body,
     marginTop: 10,
-    fontSize: 14,
     textAlign: "center",
   },
-
   textBox: {
     paddingVertical: 5,
   },
@@ -98,5 +108,20 @@ const styles = StyleSheet.create({
   },
   arrow: {
     marginLeft: 10,
+  },
+  footerWarning: {
+    backgroundColor: "#FFF3E0", // Light orange background
+    margin: 16,
+    marginBottom: 30,
+    padding: 16,
+    borderRadius: 8,
+    borderColor: colors.secondary,
+    borderWidth: 1,
+  },
+  warningText: {
+    fontSize: 12,
+    color: colors.slate,
+    textAlign: "center",
+    lineHeight: 16,
   },
 });

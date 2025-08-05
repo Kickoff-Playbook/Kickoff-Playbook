@@ -20,6 +20,7 @@ import {
 import LogInPage from "./LogIn";
 import HandleSignUp from "../api/auth";
 import { useAuth } from "../contexts/AuthContext";
+import { colors, commonStyles } from "../utils/theme";
 
 export default function SignUpPage() {
   const navigation = useNavigation();
@@ -262,7 +263,7 @@ export default function SignUpPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#e9eef3ff",
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
-    backgroundColor: "#e9eef3ff",
+    backgroundColor: colors.background,
     paddingHorizontal: 20,
   },
   header: {
@@ -282,41 +283,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerText: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...commonStyles.text.subheading,
     textAlign: "center",
-    color: "#333",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#010001ff",
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 15,
+    ...commonStyles.input,
     width: 250,
     alignSelf: "center",
-    backgroundColor: "#e6e1dbff",
-    fontSize: 16,
   },
   button: {
+    ...commonStyles.button.primary,
     alignSelf: "center",
-    backgroundColor: "#1f867aff", // Green, or any color you like
-    borderRadius: 25, // Makes the button rounded
-    paddingVertical: 14,
-    paddingHorizontal: 32,
     marginTop: 20,
     marginBottom: 30,
     width: 250,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   buttonText: {
     fontWeight: "bold",
     fontSize: 16,
     textAlign: "center",
-    color: "#fff",
+    color: colors.white,
   },
   loginLinkContainer: {
     flexDirection: "row",
@@ -327,12 +313,12 @@ const styles = StyleSheet.create({
   },
   loginLinkText: {
     fontSize: 16,
-    color: "#666",
+    color: colors.text.secondary,
     textAlign: "center",
   },
   loginLink: {
     fontSize: 16,
-    color: "#1f867aff",
+    color: colors.primary,
     fontWeight: "600",
     textDecorationLine: "underline",
   },

@@ -28,6 +28,14 @@ func (h handler) CreatePost(w http.ResponseWriter, r *http.Request){
         return
     }
 
+    // Ensure username is set based on user_id if not provided
+    if post.UserName == "" && post.UserID > 0 {
+        var user models.User
+        if err := h.DB.First(&user, post.UserID).Error; err == nil {
+            post.UserName = user.UserName
+        }
+    }
+
     // Set the creation time
     post.CreatedAt = time.Now()
 
@@ -194,6 +202,21 @@ func (h handler) GetAllPosts(w http.ResponseWriter, r *http.Request){
     if err := h.DB.Order("created_at DESC").Find(&posts).Error; err != nil {
         http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
         return
+    }
+
+    // Ensure each post has the correct username by joining with users table
+    for i := range posts {
+        if posts[i].UserName == "" {
+            var user models.User
+            if err := h.DB.First(&user, posts[i].UserID).Error; err == nil {
+                posts[i].UserName = user.UserName
+                // Update the post in the database to cache the username
+                h.DB.Model(&posts[i]).Update("user_name", user.UserName)
+            } else {
+                // If user not found, set a fallback username
+                posts[i].UserName = "Unknown User"
+            }
+        }
     }
 
     w.Header().Set("Content-Type", "application/json")

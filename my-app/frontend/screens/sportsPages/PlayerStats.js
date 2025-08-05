@@ -8,9 +8,11 @@ import {
 } from "react-native";
 import { useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 export default function PlayerStats() {
   const [selectedSport, setSelectedSport] = useState("NFL");
+  const navigation = useNavigation();
 
   const sportsData = {
     NFL: {
@@ -56,6 +58,15 @@ export default function PlayerStats() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+        <Text style={styles.backButtonText}>Back</Text>
+      </TouchableOpacity>
+
       <View style={[styles.header, { backgroundColor: currentSport.color }]}>
         <Text style={styles.headerTitle}>📊 {currentSport.title}</Text>
         <Text style={styles.headerSubtitle}>
@@ -228,5 +239,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     fontStyle: "italic",
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    zIndex: 1000,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backButtonText: {
+    color: "#fff",
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

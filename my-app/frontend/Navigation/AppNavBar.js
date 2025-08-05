@@ -6,6 +6,7 @@ import React from "react";
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../contexts/AuthContext";
+import { colors } from "../utils/theme";
 
 // Import screen components
 import SignUpPage from "../screens/SignUp";
@@ -15,6 +16,7 @@ import SportsRules from "../screens/SportsRules";
 import ResponsibleGamblingPage from "../screens/ResponsibleGambling";
 import ProfilePage from "../screens/UserProfilePage";
 import CreatorRules from "../screens/CreatorRules";
+import SportsBettingPage from "../screens/BettingAppPage";
 //
 const Tabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -24,7 +26,17 @@ const Stack = createNativeStackNavigator();
 function CreateOrSignIn() {
   return (
     <>
-      <Stack.Navigator>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.white,
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+        }}
+      >
         <Stack.Screen
           name="Sign Up"
           component={SignUpPage}
@@ -53,7 +65,33 @@ function CreateOrSignIn() {
 function MainPagesBottomTab() {
   return (
     <>
-      <Tabs.Navigator>
+      <Tabs.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.white,
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+          tabBarStyle: {
+            backgroundColor: colors.white,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+          },
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.text.secondary,
+        }}
+      >
+        <Tabs.Screen
+          name="Learn to Play"
+          component={SportsBettingPage}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="heart" size={size} color={color} />
+            ),
+          }}
+        />
         <Tabs.Screen
           name="Explore"
           component={PostPage}
@@ -96,14 +134,30 @@ function MainPagesBottomTab() {
 function AppDrawer() {
   return (
     <>
-      <Drawer.Navigator>
+      <Drawer.Navigator
+        initialRouteName="Coach's Playbook"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.white,
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+          drawerStyle: {
+            backgroundColor: colors.white,
+          },
+          drawerActiveTintColor: colors.primary,
+          drawerInactiveTintColor: colors.text.secondary,
+        }}
+      >
+        <Drawer.Screen name="Coach's Playbook" component={CreatorRules} />
         <Drawer.Screen
           name="Main"
           component={MainPagesBottomTab}
           options={{ title: `Dashboard` }}
         />
         <Drawer.Screen name="Profile Page" component={ProfilePage} />
-        <Drawer.Screen name="Coach's Playbook" component={CreatorRules} />
       </Drawer.Navigator>
     </>
   );
