@@ -10,8 +10,9 @@ import {
 import { useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-export default function SportsBettingPage() {
+export default function SportsBettingPage({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
 
   const bettingApps = [
     {
@@ -23,6 +24,8 @@ export default function SportsBettingPage() {
       rating: "4.6",
       bonus: "100% Deposit Match up to $100",
       features: ["Pick'em Style", "Player Props", "Quick Payouts"],
+      difficulty: "Beginner Friendly",
+      difficultyColor: "#28A745", // Green
     },
     {
       id: 2,
@@ -33,6 +36,8 @@ export default function SportsBettingPage() {
       rating: "4.8",
       bonus: "Bet $5, Get $200",
       features: ["Live Betting", "Same Game Parlays", "Early Cash Out"],
+      difficulty: "Medium",
+      difficultyColor: "#FFC107", // Yellow/Orange
     },
     {
       id: 3,
@@ -43,6 +48,8 @@ export default function SportsBettingPage() {
       rating: "4.7",
       bonus: "Bet $5, Get $150",
       features: ["Live Streaming", "Parlay Boosts", "Quick Payouts"],
+      difficulty: "Medium",
+      difficultyColor: "#FFC107", // Yellow/Orange
     },
     {
       id: 4,
@@ -53,6 +60,8 @@ export default function SportsBettingPage() {
       rating: "4.5",
       bonus: "First Bet Reset up to $1000",
       features: ["ESPN Integration", "Live Betting", "Sports News"],
+      difficulty: "Medium",
+      difficultyColor: "#FFC107", // Yellow/Orange
     },
     {
       id: 5,
@@ -63,6 +72,8 @@ export default function SportsBettingPage() {
       rating: "4.6",
       bonus: "Risk-Free Bet up to $1000",
       features: ["Lion's Boost", "Edit My Bet", "Live In-Game"],
+      difficulty: "Hardest",
+      difficultyColor: "#DC3545", // Red
     },
     {
       id: 6,
@@ -73,6 +84,8 @@ export default function SportsBettingPage() {
       rating: "4.3",
       bonus: "Bet $5, Get $150 in Bonus Bets",
       features: ["FanCash Rewards", "Live Betting", "Exclusive Gear"],
+      difficulty: "Beginner Friendly",
+      difficultyColor: "#28A745", // Green
     },
     {
       id: 7,
@@ -83,13 +96,39 @@ export default function SportsBettingPage() {
       rating: "4.5",
       bonus: "First Bet on Caesars up to $1250",
       features: ["Caesars Rewards", "Odds Boost", "Live Betting"],
+      difficulty: "Hardest",
+      difficultyColor: "#DC3545", // Red
     },
   ];
 
   const handleAppPress = (app) => {
     console.log(`Selected betting app: ${app.name}`);
-    // Here you would navigate to the app's information page
-    // navigation.navigate(`${app.name}Info`);
+    // Navigate to the specific app's information page
+    switch (app.name) {
+      case "PrizePicks":
+        navigation.navigate("PrizePicksInfo");
+        break;
+      case "DraftKings":
+        navigation.navigate("DraftKingsInfo");
+        break;
+      case "FanDuel":
+        navigation.navigate("FanDuelInfo");
+        break;
+      case "ESPN BET":
+        navigation.navigate("ESPNBETInfo");
+        break;
+      case "BetMGM":
+        navigation.navigate("BetMGMInfo");
+        break;
+      case "Fanatics":
+        navigation.navigate("FanaticsInfo");
+        break;
+      case "Caesars":
+        navigation.navigate("CaesarsInfo");
+        break;
+      default:
+        console.log(`Navigate to ${app.name} info page (not implemented yet)`);
+    }
   };
 
   const handleMoreAppsPress = () => {
@@ -97,8 +136,43 @@ export default function SportsBettingPage() {
     // Could show a modal or navigate to a coming soon page
   };
 
-  const filteredApps = bettingApps.filter((app) =>
-    app.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredApps = bettingApps.filter((app) => {
+    const matchesSearch = app.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesDifficulty =
+      selectedDifficulty === "All" || app.difficulty === selectedDifficulty;
+    return matchesSearch && matchesDifficulty;
+  });
+
+  const difficultyOptions = ["All", "Beginner Friendly", "Medium", "Hardest"];
+
+  const renderDifficultyFilter = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.filterContainer}
+    >
+      {difficultyOptions.map((option) => (
+        <TouchableOpacity
+          key={option}
+          style={[
+            styles.filterButton,
+            selectedDifficulty === option && styles.filterButtonActive,
+          ]}
+          onPress={() => setSelectedDifficulty(option)}
+        >
+          <Text
+            style={[
+              styles.filterButtonText,
+              selectedDifficulty === option && styles.filterButtonTextActive,
+            ]}
+          >
+            {option}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 
   const renderAppButton = (app) => (
@@ -125,6 +199,18 @@ export default function SportsBettingPage() {
           </View>
 
           <Text style={styles.appDescription}>{app.description}</Text>
+
+          {/* Difficulty Level */}
+          <View style={styles.difficultyContainer}>
+            <View
+              style={[
+                styles.difficultyBadge,
+                { backgroundColor: app.difficultyColor },
+              ]}
+            >
+              <Text style={styles.difficultyText}>{app.difficulty}</Text>
+            </View>
+          </View>
 
           <View style={styles.bonusContainer}>
             <Text style={styles.bonusText}>🎁 {app.bonus}</Text>
@@ -209,6 +295,12 @@ export default function SportsBettingPage() {
         <Text style={styles.noticeText}>
           Please gamble responsibly. Must be 21+ and located in eligible states.
         </Text>
+      </View>
+
+      {/* Difficulty Filter */}
+      <View style={styles.filterSection}>
+        <Text style={styles.filterTitle}>Filter by Difficulty Level:</Text>
+        {renderDifficultyFilter()}
       </View>
 
       {/* Apps List */}
@@ -318,6 +410,40 @@ const styles = StyleSheet.create({
     color: "#856404",
     flex: 1,
   },
+  filterSection: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  filterTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 12,
+  },
+  filterContainer: {
+    flexDirection: "row",
+  },
+  filterButton: {
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  filterButtonActive: {
+    backgroundColor: "#1f867aff",
+    borderColor: "#1f867aff",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  filterButtonTextActive: {
+    color: "white",
+  },
   appsContainer: {
     padding: 16,
   },
@@ -382,6 +508,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
+  },
+  difficultyContainer: {
+    marginBottom: 8,
+  },
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  difficultyText: {
+    fontSize: 11,
+    color: "white",
+    fontWeight: "600",
+    textTransform: "uppercase",
   },
   bonusContainer: {
     backgroundColor: "#E8F5E8",

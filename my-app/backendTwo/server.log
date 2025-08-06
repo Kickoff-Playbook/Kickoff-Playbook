@@ -84,3 +84,118 @@ Server starting on 0.0.0.0:8080...
 2025/08/04 22:17:40 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
 [0m[31;1m[285.404ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
 signal: terminated
+Tue Aug  5 09:13:18 EDT 2025: Starting server...
+Tue Aug  5 09:13:18 EDT 2025: Server started with PID: 36096
+Server starting on 0.0.0.0:8080...
+
+2025/08/05 09:27:33 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:179 [35;1mrecord not found
+[0m[33m[3.639ms] [34;1m[rows:0][0m SELECT * FROM "posts" WHERE "posts"."id" = 1 ORDER BY "posts"."id" LIMIT 1
+signal: terminated
+Tue Aug  5 20:29:41 EDT 2025: Starting server...
+Tue Aug  5 20:29:41 EDT 2025: Server started with PID: 47772
+Server starting on 0.0.0.0:8080...
+
+2025/08/05 20:45:44 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:49 [35;1mrecord not found
+[0m[33m[19.463ms] [34;1m[rows:0][0m SELECT * FROM "bookmarks" WHERE post_id = 34 AND user_id = 1 ORDER BY "bookmarks"."id" LIMIT 1
+
+2025/08/05 20:46:36 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:179 [35;1mrecord not found
+[0m[33m[2.947ms] [34;1m[rows:0][0m SELECT * FROM "posts" WHERE "posts"."id" = 1 ORDER BY "posts"."id" LIMIT 1
+
+2025/08/05 20:47:00 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:179 [35;1mrecord not found
+[0m[33m[0.288ms] [34;1m[rows:0][0m SELECT * FROM "posts" WHERE "posts"."id" = 1 ORDER BY "posts"."id" LIMIT 1
+
+2025/08/05 20:47:28 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:49 [35;1mrecord not found
+[0m[33m[0.864ms] [34;1m[rows:0][0m SELECT * FROM "bookmarks" WHERE post_id = 33 AND user_id = 1 ORDER BY "bookmarks"."id" LIMIT 1
+
+2025/08/05 20:47:48 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:49 [35;1mrecord not found
+[0m[33m[3.512ms] [34;1m[rows:0][0m SELECT * FROM "bookmarks" WHERE post_id = 35 AND user_id = 1 ORDER BY "bookmarks"."id" LIMIT 1
+
+2025/08/05 20:48:08 [31;1m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:179 [35;1mrecord not found
+[0m[33m[1.098ms] [34;1m[rows:0][0m SELECT * FROM "posts" WHERE "posts"."id" = 1 ORDER BY "posts"."id" LIMIT 1
+
+2025/08/05 20:57:53 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[261.965ms] [33m[rows:2][35m SELECT * FROM "likes" WHERE post_id = 32[0m
+
+2025/08/05 20:57:53 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[300.245ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 35[0m
+
+2025/08/05 20:57:53 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[291.112ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
+
+2025/08/05 20:57:53 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[294.391ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 34[0m
+
+2025/08/05 20:57:54 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[295.246ms] [33m[rows:1][35m SELECT * FROM "likes" WHERE post_id = 34[0m
+
+2025/08/05 20:58:02 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[245.601ms] [33m[rows:3][35m SELECT * FROM "likes" WHERE post_id = 33[0m
+
+2025/08/05 20:58:02 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[246.210ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
+
+2025/08/05 20:58:02 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[279.059ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 35[0m
+
+2025/08/05 20:58:02 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[263.718ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 32[0m
+
+2025/08/05 20:58:14 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[231.573ms] [33m[rows:1][35m SELECT * FROM "likes" WHERE post_id = 34[0m
+
+2025/08/05 20:58:14 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[231.782ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 34[0m
+
+2025/08/05 20:58:14 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[236.088ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
+
+2025/08/05 20:58:14 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[220.952ms] [33m[rows:2][35m SELECT * FROM "likes" WHERE post_id = 32[0m
+
+2025/08/06 08:29:36 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[213.367ms] [33m[rows:3][35m SELECT * FROM "likes" WHERE post_id = 33[0m
+
+2025/08/06 08:29:36 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[214.271ms] [33m[rows:1][35m SELECT * FROM "likes" WHERE post_id = 34[0m
+
+2025/08/06 08:29:36 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[242.396ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 34[0m
+
+2025/08/06 08:29:36 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[257.074ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 35[0m
+
+2025/08/06 10:24:09 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[488.491ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 35[0m
+
+2025/08/06 10:24:09 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[488.220ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
+
+2025/08/06 10:24:09 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[485.722ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 34[0m
+
+2025/08/06 10:24:09 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[475.904ms] [33m[rows:3][35m SELECT * FROM "likes" WHERE post_id = 33[0m
+
+2025/08/06 11:39:57 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[297.196ms] [33m[rows:3][35m SELECT * FROM "likes" WHERE post_id = 33[0m
+
+2025/08/06 11:39:57 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[313.499ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m
+
+2025/08/06 11:39:57 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[298.321ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 32[0m
+
+2025/08/06 11:39:57 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[321.965ms] [33m[rows:1][35m SELECT * FROM "likes" WHERE post_id = 34[0m
+
+2025/08/06 13:22:55 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[277.592ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 34[0m
+
+2025/08/06 13:22:55 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[261.271ms] [33m[rows:2][35m SELECT * FROM "likes" WHERE post_id = 32[0m
+
+2025/08/06 13:22:55 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[269.043ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 35[0m
+
+2025/08/06 13:22:55 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[282.910ms] [33m[rows:1][35m SELECT * FROM "bookmarks" WHERE post_id = 33[0m

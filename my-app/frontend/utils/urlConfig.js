@@ -6,32 +6,32 @@ import { Platform } from "react-native";
 
 export const URL_CONFIGS = {
   home: {
-    name: "Home Network (192.168.1.71)",
+    name: "Current Network (192.168.1.74)",
     urls:
       Platform.OS === "ios"
         ? [
-            "http://192.168.1.71:8080",
+            "http://192.168.1.74:8080",
             "http://localhost:8080",
-            "http://192.168.1.73:8080",
+            "http://10.0.13.209:8080",
           ]
         : [
-            "http://192.168.1.71:8080",
+            "http://192.168.1.74:8080",
             "http://10.0.2.2:8080",
             "http://localhost:8080",
           ],
   },
   school: {
-    name: "School Network (192.168.1.73)",
+    name: "School Network (192.168.1.74)",
     urls:
       Platform.OS === "ios"
         ? [
-            "http://192.168.1.73:8080",
-            "http://192.168.1.71:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
             "http://localhost:8080",
           ]
         : [
-            "http://192.168.1.73:8080",
-            "http://192.168.1.71:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
             "http://10.0.2.2:8080",
           ],
   },
@@ -41,13 +41,13 @@ export const URL_CONFIGS = {
       Platform.OS === "ios"
         ? [
             "http://localhost:8080",
-            "http://192.168.1.71:8080",
-            "http://192.168.1.73:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
           ]
         : [
             "http://10.0.2.2:8080",
             "http://localhost:8080",
-            "http://192.168.1.71:8080",
+            "http://192.168.1.74:8080",
           ],
   },
   auto: {
@@ -55,15 +55,21 @@ export const URL_CONFIGS = {
     urls:
       Platform.OS === "ios"
         ? [
-            "http://192.168.1.71:8080",
-            "http://192.168.1.73:8080",
             "http://localhost:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
+          ]
+        : Platform.OS === "web"
+        ? [
+            "http://localhost:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
           ]
         : [
-            "http://192.168.1.71:8080",
-            "http://192.168.1.73:8080",
             "http://10.0.2.2:8080",
             "http://localhost:8080",
+            "http://192.168.1.74:8080",
+            "http://10.0.13.209:8080",
           ],
   },
 };

@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { useState, useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { FontAwesome } from "@expo/vector-icons";
+import { faHockeyPuck } from "@fortawesome/free-solid-svg-icons";
 
 export default function SportsList({ navigation }) {
   const sportsData = [
@@ -37,7 +39,7 @@ export default function SportsList({ navigation }) {
     {
       id: 4,
       name: "Hockey (NHL)",
-      icon: "hockey-puck",
+      icon: "snow-outline", // Winter/ice hockey theme
       color: "#4169E1",
       description: "National Hockey League",
     },
@@ -114,7 +116,11 @@ export default function SportsList({ navigation }) {
       <View style={styles.sportContent}>
         {/* Sport Icon */}
         <View style={[styles.iconContainer, { backgroundColor: sport.color }]}>
-          <Ionicons name={sport.icon} size={24} color="white" />
+          {sport.iconType === "fontawesome" ? (
+            <FontAwesome name={sport.icon} size={24} color="white" />
+          ) : (
+            <Ionicons name={sport.icon} size={24} color="white" />
+          )}
         </View>
 
         {/* Sport Info */}

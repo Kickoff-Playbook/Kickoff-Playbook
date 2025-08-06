@@ -17,6 +17,15 @@ import ResponsibleGamblingPage from "../screens/ResponsibleGambling";
 import ProfilePage from "../screens/UserProfilePage";
 import CreatorRules from "../screens/CreatorRules";
 import SportsBettingPage from "../screens/BettingAppPage";
+
+// Import betting app info screens
+import PrizePicksInfo from "../screens/bettingApps/PrizePicksInfo";
+import DraftKingsInfo from "../screens/bettingApps/DraftKingsInfo";
+import FanDuelInfo from "../screens/bettingApps/FanDuelInfo";
+import BetMGMInfo from "../screens/bettingApps/BetMGMInfo";
+import FanaticsInfo from "../screens/bettingApps/FanaticsInfo";
+import ESPNBETInfo from "../screens/bettingApps/ESPNBETInfo";
+import CaesarsInfo from "../screens/bettingApps/CaesarsInfo";
 //
 const Tabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -61,6 +70,86 @@ function CreateOrSignIn() {
   );
 }
 
+// - Stack navigator for betting apps section
+function BettingAppsStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.white,
+        headerTitleStyle: {
+          fontWeight: "bold",
+        },
+      }}
+    >
+      <Stack.Screen
+        name="BettingAppsMain"
+        component={SportsBettingPage}
+        options={{ title: "Sports Betting Apps" }}
+      />
+      <Stack.Screen
+        name="PrizePicksInfo"
+        component={PrizePicksInfo}
+        options={{
+          title: "PrizePicks",
+          headerStyle: { backgroundColor: "#6C5CE7" },
+        }}
+      />
+      <Stack.Screen
+        name="DraftKingsInfo"
+        component={DraftKingsInfo}
+        options={{
+          title: "DraftKings",
+          headerStyle: { backgroundColor: "#FF6B35" },
+        }}
+      />
+      <Stack.Screen
+        name="FanDuelInfo"
+        component={FanDuelInfo}
+        options={{
+          title: "FanDuel",
+          headerStyle: { backgroundColor: "#1E3A8A" },
+        }}
+      />
+      <Stack.Screen
+        name="BetMGMInfo"
+        component={BetMGMInfo}
+        options={{
+          title: "BetMGM",
+          headerStyle: { backgroundColor: "#FFD700" },
+          headerTintColor: "black",
+        }}
+      />
+      <Stack.Screen
+        name="FanaticsInfo"
+        component={FanaticsInfo}
+        options={{
+          title: "Fanatics",
+          headerStyle: { backgroundColor: "#0066CC" },
+        }}
+      />
+      <Stack.Screen
+        name="ESPNBETInfo"
+        component={ESPNBETInfo}
+        options={{
+          title: "ESPN BET",
+          headerStyle: { backgroundColor: "#CC0000" },
+        }}
+      />
+      <Stack.Screen
+        name="CaesarsInfo"
+        component={CaesarsInfo}
+        options={{
+          title: "Caesars",
+          headerStyle: { backgroundColor: "#8B0000" },
+        }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 // - Bottom tabs, postpage, sports and rules, responsible gambling, bet by app page
 function MainPagesBottomTab() {
   return (
@@ -85,11 +174,12 @@ function MainPagesBottomTab() {
       >
         <Tabs.Screen
           name="Learn to Play"
-          component={SportsBettingPage}
+          component={BettingAppsStack}
           options={{
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="heart" size={size} color={color} />
             ),
+            headerShown: false, // Hide the tab header since stack has its own
           }}
         />
         <Tabs.Screen

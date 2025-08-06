@@ -1,0 +1,68 @@
+// Example Navigation Setup - Add these screens to your navigation stack
+
+// In your main navigation file (usually App.js or Navigation/AppNavBar.js), add these imports:
+
+import PrizePicksInfo from '../screens/bettingApps/PrizePicksInfo';
+import DraftKingsInfo from '../screens/bettingApps/DraftKingsInfo';
+import FanDuelInfo from '../screens/bettingApps/FanDuelInfo';
+import BetMGMInfo from '../screens/bettingApps/BetMGMInfo';
+import FanaticsInfo from '../screens/bettingApps/FanaticsInfo';
+// Import the remaining betting app info screens as you create them
+
+// Then add these screens to your Stack.Navigator:
+<Stack.Screen 
+  name="PrizePicksInfo" 
+  component={PrizePicksInfo}
+  options={{ 
+    title: 'PrizePicks',
+    headerStyle: { backgroundColor: '#6C5CE7' },
+    headerTintColor: 'white',
+  }}
+/>
+<Stack.Screen 
+  name="DraftKingsInfo" 
+  component={DraftKingsInfo}
+  options={{ 
+    title: 'DraftKings',
+    headerStyle: { backgroundColor: '#FF6B35' },
+    headerTintColor: 'white',
+  }}
+/>
+<Stack.Screen 
+  name="FanDuelInfo" 
+  component={FanDuelInfo}
+  options={{ 
+    title: 'FanDuel',
+    headerStyle: { backgroundColor: '#1E3A8A' },
+    headerTintColor: 'white',
+  }}
+/>
+<Stack.Screen 
+  name="BetMGMInfo" 
+  component={BetMGMInfo}
+  options={{ 
+    title: 'BetMGM',
+    headerStyle: { backgroundColor: '#FFD700' },
+    headerTintColor: 'black',
+  }}
+/>
+<Stack.Screen 
+  name="FanaticsInfo" 
+  component={FanaticsInfo}
+  options={{ 
+    title: 'Fanatics',
+    headerStyle: { backgroundColor: '#0066CC' },
+    headerTintColor: 'white',
+  }}
+/>
+
+// Create similar screens for:
+// - ESPNBETInfo (Medium difficulty)
+// - CaesarsInfo (Hardest difficulty)
+
+// Each info page will show:
+// 1. App branding with difficulty badge
+// 2. Current bonus offer
+// 3. Key features
+// 4. Sport selection list
+// 5. Appropriate messaging based on difficulty level
