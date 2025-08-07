@@ -23,8 +23,18 @@ export default function PrizePicksInfo({ navigation }) {
 
   const handleSportPress = (sport) => {
     console.log(`Selected ${sport.name} for PrizePicks`);
-    // You can navigate to specific sport betting page here
-    // navigation.navigate('PrizePicksBetting', { sport: sport });
+    // Navigate to specific sport betting page
+    switch (sport.name) {
+      case "MLB Baseball":
+        navigation.navigate("PrizePicksBaseball");
+        break;
+      case "NFL Football":
+        navigation.navigate("PrizePicksFootball");
+        break;
+      // Add other sports navigation here
+      default:
+        console.log(`${sport.name} page not implemented yet`);
+    }
   };
 
   const renderSportButton = (sport) => (

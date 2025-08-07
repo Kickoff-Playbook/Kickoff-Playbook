@@ -22,6 +22,18 @@ export default function FanDuelInfo({ navigation }) {
 
   const handleSportPress = (sport) => {
     console.log(`Selected ${sport.name} for FanDuel`);
+    // Navigate to specific sport betting page
+    switch (sport.name) {
+      case "MLB Baseball":
+        navigation.navigate("FanDuelBaseball");
+        break;
+      case "NFL Football":
+        navigation.navigate("FanDuelFootball");
+        break;
+      // Add other sports navigation here
+      default:
+        console.log(`${sport.name} page not implemented yet`);
+    }
   };
 
   const renderSportButton = (sport) => (

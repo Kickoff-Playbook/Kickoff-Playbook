@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../contexts/AuthContext";
 import {
   URL_CONFIGS,
@@ -35,9 +36,19 @@ import {
 } from "../api/comment";
 import { toggleLike, getLikesByPost } from "../api/like";
 import { toggleBookmark, getBookmarksByPost } from "../api/bookmark";
+import { uploadImage, convertImageToBase64 } from "../api/upload";
+import { deletePost } from "../api/posts";
 
 // Individual Post Item Component
-function PostItem({ post, onCommentPress, onLikePress, onBookmarkPress }) {
+function PostItem({ post, onCommentPress, onLikePress, onBookmarkPress, onDeletePress, currentUser }) {
+  // Debug log for image URL
+  if (post.image_url) {
+    console.log("PostItem rendering with image_url:", post.image_url);
+  }
+
+  // Check if current user is the post creator
+  const isPostCreator = currentUser && (currentUser.id === post.user_id || currentUser.id === post.UserID);
+
   // Format timestamp to readable format
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "Unknown time";
@@ -58,11 +69,39 @@ function PostItem({ post, onCommentPress, onLikePress, onBookmarkPress }) {
         <Text style={styles.usernameOne}>
           {post.username || post.user_name || `User ${post.user_id}`}
         </Text>
-        <Text style={styles.timestamp}>{formatTimestamp(post.created_at)}</Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.timestamp}>{formatTimestamp(post.created_at)}</Text>
+          {isPostCreator && (
+            <TouchableOpacity
+              style={styles.deletePostButton}
+              onPress={() => onDeletePress(post)}
+            >
+              <Ionicons name="trash-outline" size={16} color="#ff4444" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Content */}
       <Text style={styles.contentText}>{post.content}</Text>
+
+      {/* Post Image */}
+      {post.image_url && (
+        <Image
+          source={{ uri: post.image_url }}
+          style={styles.postImage}
+          resizeMode="cover"
+          onError={(error) => {
+            console.error("Image failed to load:", post.image_url, error.nativeEvent.error);
+          }}
+          onLoad={() => {
+            console.log("Image loaded successfully:", post.image_url);
+          }}
+        />
+      )}
+      {post.image_url && (
+        <Text style={styles.debugText}>Debug: Image URL exists: {post.image_url}</Text>
+      )}
 
       {/* Actions */}
       <View style={styles.actions}>
@@ -162,6 +201,8 @@ export default function PostPage() {
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostImage, setNewPostImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [currentURLConfig, setCurrentURLConfig] = useState("auto");
   const [showURLSwitcher, setShowURLSwitcher] = useState(false);
 
@@ -218,6 +259,13 @@ export default function PostPage() {
       const data = await response.json();
       console.log("Fetched posts:", data); // Debug log
 
+      // Check if posts have image_url
+      data.forEach((post, index) => {
+        if (post.image_url) {
+          console.log(`Post ${index} has image_url:`, post.image_url);
+        }
+      });
+
       // Fetch like and bookmark information for each post
       const postsWithLikesAndBookmarks = await Promise.all(
         (data || []).map(async (post) => {
@@ -261,30 +309,59 @@ export default function PostPage() {
   };
   // Handle creating a new post
   const handleCreatePost = async () => {
-    if (!newPostContent.trim()) {
-      alert("Please enter some content for your post");
+    if (!newPostContent.trim() && !newPostImage) {
+      alert("Please enter some content or select an image for your post");
       return;
     }
 
     try {
+      setUploadingImage(true);
+      
+      let imageUrl = "";
+      
+      // Upload image if one is selected
+      if (newPostImage) {
+        try {
+          console.log("Converting image to base64...");
+          const base64Image = await convertImageToBase64(newPostImage);
+          
+          console.log("Uploading image...");
+          imageUrl = await uploadImage(base64Image, `post_${Date.now()}.jpg`);
+          console.log("Image uploaded successfully:", imageUrl);
+        } catch (imageError) {
+          console.error("Failed to upload image:", imageError);
+          Alert.alert("Upload Error", "Failed to upload image. Post will be created without the image.");
+          imageUrl = ""; // Continue without image
+        }
+      }
+
+      const postData = {
+        user_id: user?.id || 1, // Use authenticated user ID
+        username: user?.username || "Anonymous", // Include username
+        content: newPostContent.trim(),
+        image_url: imageUrl, // Use uploaded image URL
+      };
+
+      console.log("Creating post with data:", postData);
+
       const response = await tryMultipleURLs("/create/post", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          user_id: user?.id || 1, // Use authenticated user ID
-          username: user?.username || "Anonymous", // Include username
-          content: newPostContent.trim(),
-        }),
+        body: JSON.stringify(postData),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const result = await response.json();
+      console.log("Post creation response:", result);
+
       // Reset form and close modal
       setNewPostContent("");
+      setNewPostImage(null);
       setShowCreateModal(false);
 
       // Refresh posts to show the new one
@@ -294,6 +371,8 @@ export default function PostPage() {
     } catch (err) {
       console.error("Error creating post:", err);
       alert("Failed to create post. Please try again.");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -317,6 +396,62 @@ export default function PostPage() {
     }
   };
 
+  // Handle image selection for create post
+  const handlePostImageSelect = () => {
+    Alert.alert("Select Image", "Choose an option", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Camera", onPress: () => openPostImagePicker("camera") },
+      { text: "Photo Library", onPress: () => openPostImagePicker("library") },
+    ]);
+  };
+
+  // Open image picker for create post
+  const openPostImagePicker = async (source) => {
+    try {
+      // Request permissions
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Photo library permission is required to select photos');
+          return;
+        }
+      }
+
+      // Configure picker options
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      };
+
+      let result;
+      if (source === "camera") {
+        result = await ImagePicker.launchCameraAsync(options);
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setNewPostImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
+  };
+
+  // Remove selected image for create post
+  const removePostSelectedImage = () => {
+    setNewPostImage(null);
+  };
+
   // Handle image selection
   const handleImageSelect = () => {
     Alert.alert("Select Image", "Choose an option", [
@@ -326,14 +461,46 @@ export default function PostPage() {
     ]);
   };
 
-  // Simulate image picker (in a real app, you'd use react-native-image-picker)
-  const openImagePicker = (source) => {
-    // This is a placeholder - in a real app you would use react-native-image-picker
-    Alert.alert("Image Picker", `${source} functionality would open here`);
-    // For demo purposes, set a placeholder image
-    setSelectedImage(
-      "https://via.placeholder.com/200x200.png?text=Selected+Image"
-    );
+  // Open image picker for comments
+  const openImagePicker = async (source) => {
+    try {
+      // Request permissions
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Camera permission is required to take photos');
+          return;
+        }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission needed', 'Photo library permission is required to select photos');
+          return;
+        }
+      }
+
+      // Configure picker options
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      };
+
+      let result;
+      if (source === "camera") {
+        result = await ImagePicker.launchCameraAsync(options);
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    }
   };
 
   // Remove selected image
@@ -349,12 +516,30 @@ export default function PostPage() {
     }
 
     try {
+      let imageUrl = "";
+      
+      // Upload image if one is selected
+      if (selectedImage) {
+        try {
+          console.log("Converting comment image to base64...");
+          const base64Image = await convertImageToBase64(selectedImage);
+          
+          console.log("Uploading comment image...");
+          imageUrl = await uploadImage(base64Image, `comment_${Date.now()}.jpg`);
+          console.log("Comment image uploaded successfully:", imageUrl);
+        } catch (imageError) {
+          console.error("Failed to upload comment image:", imageError);
+          Alert.alert("Upload Error", "Failed to upload image. Comment will be created without the image.");
+          imageUrl = ""; // Continue without image
+        }
+      }
+
       const commentData = {
         post_id: selectedPost.id,
         user_id: user?.id || 1,
         username: user?.username || "Anonymous",
         content: commentContent.trim(),
-        image_url: selectedImage || "",
+        image_url: imageUrl,
       };
 
       console.log("Submitting comment:", commentData);
@@ -459,6 +644,40 @@ export default function PostPage() {
     }
   };
 
+  // Handle deleting a post
+  const handleDeletePress = async (post) => {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deletePost(post.id, user?.id || 1);
+
+              // Remove the deleted post from the posts state
+              setPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
+
+              Alert.alert("Success", "Post deleted successfully!");
+            } catch (err) {
+              console.error("Error deleting post:", err);
+              Alert.alert(
+                "Error",
+                err.message || "Failed to delete post. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Fetch posts when component mounts
 
   // Fetch posts when component mounts
@@ -503,6 +722,8 @@ export default function PostPage() {
             onCommentPress={handleCommentPress}
             onLikePress={handleLikePress}
             onBookmarkPress={handleBookmarkPress}
+            onDeletePress={handleDeletePress}
+            currentUser={user}
           />
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -591,55 +812,81 @@ export default function PostPage() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCreateModal(false);
+                setNewPostContent("");
+                setNewPostImage(null);
+              }}
+            >
               <Text style={styles.modalCancelButton}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Create Post</Text>
-            <TouchableOpacity onPress={handleCreatePost}>
-              <Text style={styles.modalPostButton}>Post</Text>
+            <TouchableOpacity 
+              onPress={handleCreatePost}
+              disabled={uploadingImage || (!newPostContent.trim() && !newPostImage)}
+            >
+              <Text
+                style={[
+                  styles.modalPostButton,
+                  (uploadingImage || (!newPostContent.trim() && !newPostImage)) &&
+                    styles.disabledButtonText,
+                ]}
+              >
+                {uploadingImage ? "Uploading..." : "Post"}
+              </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalContent}>
-            <TextInput
-              style={styles.postInput}
-              placeholder="What's on your mind about sports betting?"
-              value={newPostContent}
-              onChangeText={setNewPostContent}
-              multiline
-              maxLength={500}
-              autoFocus
-            />
+            {uploadingImage && (
+              <View style={styles.uploadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+                <Text style={styles.uploadingText}>Uploading image...</Text>
+              </View>
+            )}
+            
+            <View style={styles.textInputContainer}>
+              <TextInput
+                style={styles.postInput}
+                placeholder="What's on your mind about sports betting?"
+                value={newPostContent}
+                onChangeText={setNewPostContent}
+                multiline
+                maxLength={500}
+                autoFocus
+                editable={!uploadingImage}
+              />
+            </View>
             <Text style={styles.characterCount}>
               {newPostContent.length}/500
             </Text>
 
-            {/* Modal Buttons */}
-            <View style={styles.modalButtons}>
+            {/* Image Upload Section */}
+            <View style={styles.imageSection}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setShowCreateModal(false);
-                  setNewPostContent("");
-                }}
+                style={styles.imageSelectButton}
+                onPress={handlePostImageSelect}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Ionicons name="image-outline" size={20} color="#007AFF" />
+                <Text style={styles.imageSelectText}>Add Photo</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.createButton]}
-                onPress={handleCreatePost}
-                disabled={!newPostContent.trim()}
-              >
-                <Text
-                  style={[
-                    styles.createButtonText,
-                    !newPostContent.trim() && styles.disabledButtonText,
-                  ]}
-                >
-                  Create Post
-                </Text>
-              </TouchableOpacity>
+              {/* Selected Image Preview */}
+              {newPostImage && (
+                <View style={styles.selectedImageContainer}>
+                  <Image
+                    source={{ uri: newPostImage }}
+                    style={styles.selectedImage}
+                  />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={removePostSelectedImage}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#ff4444" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -817,7 +1064,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   usernameOne: {
     fontWeight: "bold",
@@ -825,9 +1078,12 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   timestamp: {
-    marginLeft: "auto",
     fontSize: 12,
     color: "#999",
+  },
+  deletePostButton: {
+    padding: 4,
+    borderRadius: 4,
   },
   contentText: {
     fontSize: 15,
@@ -840,6 +1096,12 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 10,
     marginTop: 10,
+  },
+  debugText: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 5,
+    fontStyle: "italic",
   },
   actions: {
     flexDirection: "row",
@@ -929,40 +1191,79 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     lineHeight: 28,
   },
-  // Modal button styles
-  modalButtons: {
+  // Create Post Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
     alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
   },
-  cancelButton: {
-    backgroundColor: "#f0f0f0",
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontSize: 16,
+  modalTitle: {
+    fontSize: 18,
     fontWeight: "600",
+    color: "#333",
   },
-  createButton: {
-    backgroundColor: "#007AFF",
-  },
-  createButtonText: {
-    color: "#fff",
+  modalCancelButton: {
     fontSize: 16,
+    color: "#007AFF",
+  },
+  modalPostButton: {
+    fontSize: 16,
+    color: "#007AFF",
     fontWeight: "600",
   },
   disabledButtonText: {
     opacity: 0.5,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  textInputContainer: {
+    borderWidth: 2,
+    borderColor: "#e0e0e0",
+    borderRadius: 12,
+    backgroundColor: "#fafafa",
+    padding: 4,
+    marginBottom: 10,
+  },
+  postInput: {
+    fontSize: 16,
+    color: "#333",
+    padding: 16,
+    minHeight: 120,
+    textAlignVertical: "top",
+    backgroundColor: "transparent",
+  },
+  characterCount: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "right",
+    marginTop: 5,
+  },
+  uploadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0f8ff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+  },
+  uploadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "500",
   },
   // URL Switcher Modal Styles
   urlModalContainer: {

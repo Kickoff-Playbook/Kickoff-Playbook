@@ -152,6 +152,17 @@ http.HandleFunc("/delete/post/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
 
+	// Upload routes
+	http.HandleFunc("/upload/image", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			h.UploadImage(w, r)
+			return
+		}
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	})
+
+	// Serve static files (uploaded images)
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads/"))))
 
 	///////////////////////////////////////
     fmt.Println("Server starting on 0.0.0.0:8080...")

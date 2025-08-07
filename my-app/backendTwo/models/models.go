@@ -21,6 +21,7 @@ type Posts struct {
 	UserName string `json:"username"`
 	CreatedAt time.Time `json:"created_at"`
 	Content string `json:"content" gorm:"type:text"`
+	ImageURL string `json:"image_url,omitempty"`
 }
 
 type Bookmark struct {

@@ -50,6 +50,7 @@ func (h handler) CreatePost(w http.ResponseWriter, r *http.Request){
         "user_id":    post.UserID,
         "username":    post.UserName,
         "content":    post.Content,
+        "image_url":  post.ImageURL,
         "created_at": post.CreatedAt,
         "message":    "Post created successfully",
     }
@@ -170,10 +171,29 @@ func (h handler) DeletePost(w http.ResponseWriter, r *http.Request){
         return
     }
 
+    // Get user_id from query parameters
+    userIDStr := r.URL.Query().Get("user_id")
+    if userIDStr == "" {
+        http.Error(w, "User ID required", http.StatusBadRequest)
+        return
+    }
+
+    userID, err := strconv.Atoi(userIDStr)
+    if err != nil {
+        http.Error(w, "Invalid user ID", http.StatusBadRequest)
+        return
+    }
+
     // Check if post exists
     var post models.Posts
     if err := h.DB.First(&post, id).Error; err != nil {
         http.Error(w, "Post not found", http.StatusNotFound)
+        return
+    }
+
+    // Check if the requesting user is the post creator
+    if post.UserID != uint(userID) {
+        http.Error(w, "Unauthorized: You can only delete your own posts", http.StatusForbidden)
         return
     }
 

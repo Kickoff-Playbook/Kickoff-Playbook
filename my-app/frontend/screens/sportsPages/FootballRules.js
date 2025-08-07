@@ -16,6 +16,10 @@ export default function FootballRules() {
   const [expandedRule, setExpandedRule] = useState(null);
   const [activeTab, setActiveTab] = useState("rules"); // "rules" or "teams"
   const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [teamPlayers, setTeamPlayers] = useState([]);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [playerStats, setPlayerStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
@@ -30,6 +34,43 @@ export default function FootballRules() {
       fetchTeams();
     }
   }, [activeTab]);
+
+  // Fetch team details and players when a team is selected
+  const fetchTeamDetails = async (teamId) => {
+    const options = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "x-api-key": "dLYB9vRIvJLvIndg10Oaj8oTr7gS1rimOfuvskhN",
+      },
+    };
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(
+        `https://api.sportradar.com/nfl/official/trial/v7/en/teams/${teamId}/profile.json`,
+        options
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Team Profile Response:", data);
+
+      if (data && data.players) {
+        setTeamPlayers(data.players);
+        console.log(`📊 Found ${data.players.length} players for ${data.name}`);
+      }
+    } catch (err) {
+      console.error("❌ Team Profile API Error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchTeams = async () => {
     const options = {
@@ -99,21 +140,65 @@ export default function FootballRules() {
     },
   ];
 
-  // Team item renderer
+  // Team item renderer with click functionality
   const renderTeam = ({ item }) => (
-    <View style={styles.teamItem}>
-      <View style={styles.teamHeader}>
-        <Text style={styles.teamName}>{item.name}</Text>
-        <Text style={styles.teamAlias}>{item.alias}</Text>
+    <TouchableOpacity
+      style={styles.teamItem}
+      onPress={() => {
+        setSelectedTeam(item);
+        setSelectedPlayer(null);
+        setPlayerStats(null);
+        fetchTeamDetails(item.id);
+      }}
+    >
+      <View style={styles.teamContent}>
+        <View style={styles.teamHeader}>
+          <Text style={styles.teamName}>{item.name}</Text>
+          <Text style={styles.teamAlias}>{item.alias}</Text>
+        </View>
+        <Text style={styles.teamLocation}>{item.market}</Text>
+        <View style={styles.teamDetails}>
+          <Text style={styles.teamConference}>
+            {item.conference?.name || "Conference"} •{" "}
+            {item.division?.name || "Division"}
+          </Text>
+        </View>
       </View>
-      <Text style={styles.teamLocation}>{item.market}</Text>
-      <View style={styles.teamDetails}>
-        <Text style={styles.teamConference}>
-          {item.conference?.name || "Conference"} •{" "}
-          {item.division?.name || "Division"}
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color="#8B4513"
+        style={styles.chevron}
+      />
+    </TouchableOpacity>
+  );
+
+  // Player item renderer
+  const renderPlayer = ({ item }) => (
+    <TouchableOpacity
+      style={styles.playerItem}
+      onPress={() => {
+        setSelectedPlayer(item);
+        setPlayerStats(item); // In this case, player data includes stats
+      }}
+    >
+      <View style={styles.playerHeader}>
+        <Text style={styles.playerName}>{item.name}</Text>
+        <Text style={styles.playerJersey}>#{item.jersey}</Text>
+      </View>
+      <Text style={styles.playerPosition}>{item.position}</Text>
+      <View style={styles.playerDetails}>
+        <Text style={styles.playerInfo}>
+          {item.height} • {item.weight} lbs • Age: {item.age || "N/A"}
         </Text>
       </View>
-    </View>
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color="#8B4513"
+        style={styles.chevron}
+      />
+    </TouchableOpacity>
   );
 
   const renderRulesContent = () => (
@@ -145,41 +230,187 @@ export default function FootballRules() {
     </>
   );
 
-  const renderTeamsContent = () => (
-    <FlatList
-      data={teams}
-      keyExtractor={(item) => item.id}
-      renderItem={renderTeam}
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={() => (
-        <>
-          {loading && (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color="#8B4513" />
-              <Text style={styles.loadingText}>Loading NFL teams...</Text>
-            </View>
-          )}
+  const renderTeamsContent = () => {
+    // If viewing player stats
+    if (selectedPlayer && playerStats) {
+      return (
+        <ScrollView
+          style={styles.playerStatsContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.playerStatsContent}
+        >
+          <TouchableOpacity
+            style={styles.backToPlayersButton}
+            onPress={() => {
+              setSelectedPlayer(null);
+              setPlayerStats(null);
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color="#8B4513" />
+            <Text style={styles.backButtonText}>Back to Players</Text>
+          </TouchableOpacity>
 
-          {error && (
-            <View style={styles.centerContainer}>
-              <Text style={styles.errorText}>❌ Error: {error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={fetchTeams}>
-                <Text style={styles.retryText}>Try Again</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </>
-      )}
-      ListEmptyComponent={() =>
-        !loading &&
-        !error && (
-          <View style={styles.centerContainer}>
-            <Text style={styles.emptyText}>No teams found</Text>
+          <View style={styles.playerStatsHeader}>
+            <Text style={styles.playerStatsName}>{playerStats.name}</Text>
+            <Text style={styles.playerStatsJersey}>#{playerStats.jersey}</Text>
           </View>
-        )
-      }
-    />
-  );
+
+          <View style={styles.playerStatsGrid}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Position</Text>
+              <Text style={styles.statValue}>
+                {playerStats.position || "N/A"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Height</Text>
+              <Text style={styles.statValue}>
+                {playerStats.height || "N/A"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Weight</Text>
+              <Text style={styles.statValue}>
+                {playerStats.weight || "N/A"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Age</Text>
+              <Text style={styles.statValue}>{playerStats.age || "N/A"}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Experience</Text>
+              <Text style={styles.statValue}>
+                {playerStats.experience || "N/A"} yrs
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>College</Text>
+              <Text style={styles.statValue}>
+                {playerStats.college || "N/A"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Birth Date</Text>
+              <Text style={styles.statValue}>
+                {playerStats.birth_date || "N/A"}
+              </Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Birth Place</Text>
+              <Text style={styles.statValue}>
+                {playerStats.birth_place || "N/A"}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      );
+    }
+
+    // If viewing team players
+    if (selectedTeam && teamPlayers.length > 0) {
+      return (
+        <ScrollView
+          style={styles.playersContainer}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.playersContent}
+        >
+          <TouchableOpacity
+            style={styles.backToTeamsButton}
+            onPress={() => {
+              setSelectedTeam(null);
+              setTeamPlayers([]);
+            }}
+          >
+            <Ionicons name="chevron-back" size={20} color="#8B4513" />
+            <Text style={styles.backButtonText}>Back to Teams</Text>
+          </TouchableOpacity>
+
+          <View style={styles.teamPlayersHeader}>
+            <Text style={styles.teamPlayersTitle}>
+              {selectedTeam.name} Roster
+            </Text>
+            <Text style={styles.teamPlayersCount}>
+              {teamPlayers.length} Players
+            </Text>
+          </View>
+
+          {teamPlayers.map((player) => (
+            <TouchableOpacity
+              key={player.id}
+              style={styles.playerItem}
+              onPress={() => {
+                setSelectedPlayer(player);
+                setPlayerStats(player);
+              }}
+            >
+              <View style={styles.playerContent}>
+                <View style={styles.playerHeader}>
+                  <Text style={styles.playerName}>{player.name}</Text>
+                  <Text style={styles.playerJersey}>#{player.jersey}</Text>
+                </View>
+                <Text style={styles.playerPosition}>{player.position}</Text>
+                <View style={styles.playerDetails}>
+                  <Text style={styles.playerInfo}>
+                    {player.height} • {player.weight} lbs • Age:{" "}
+                    {player.age || "N/A"}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color="#8B4513"
+                style={styles.chevron}
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      );
+    }
+
+    // Default teams list
+    return (
+      <FlatList
+        data={teams}
+        keyExtractor={(item) => item.id}
+        renderItem={renderTeam}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={() => (
+          <>
+            {loading && (
+              <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color="#8B4513" />
+                <Text style={styles.loadingText}>
+                  {selectedTeam ? "Loading players..." : "Loading NFL teams..."}
+                </Text>
+              </View>
+            )}
+
+            {error && (
+              <View style={styles.centerContainer}>
+                <Text style={styles.errorText}>❌ Error: {error}</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={fetchTeams}
+                >
+                  <Text style={styles.retryText}>Try Again</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
+        ListEmptyComponent={() =>
+          !loading &&
+          !error && (
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyText}>No teams found</Text>
+            </View>
+          )
+        }
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -223,7 +454,13 @@ export default function FootballRules() {
 
         <TouchableOpacity
           style={[styles.tab, activeTab === "teams" && styles.activeTab]}
-          onPress={() => setActiveTab("teams")}
+          onPress={() => {
+            setActiveTab("teams");
+            setSelectedTeam(null);
+            setTeamPlayers([]);
+            setSelectedPlayer(null);
+            setPlayerStats(null);
+          }}
         >
           <Ionicons
             name="people"
@@ -406,6 +643,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    flexDirection: "row",
+    alignItems: "center",
   },
   teamHeader: {
     flexDirection: "row",
@@ -439,6 +678,194 @@ const styles = StyleSheet.create({
   teamConference: {
     fontSize: 14,
     color: "#999",
+  },
+  teamContent: {
+    flex: 1,
+  },
+  chevron: {
+    marginLeft: 12,
+  },
+  // Players Section Styles
+  playersContainer: {
+    flex: 1,
+  },
+  playersContent: {
+    paddingBottom: 30,
+  },
+  backToTeamsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  backToPlayersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#8B4513",
+    marginLeft: 8,
+  },
+  teamPlayersHeader: {
+    padding: 16,
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  teamPlayersTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  teamPlayersCount: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  playerItem: {
+    backgroundColor: "white",
+    margin: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#8B4513",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  playerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  playerName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+  },
+  playerJersey: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#8B4513",
+    backgroundColor: "#f8f9fa",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  playerPosition: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 4,
+    fontWeight: "600",
+  },
+  playerDetails: {
+    marginTop: 4,
+  },
+  playerInfo: {
+    fontSize: 14,
+    color: "#999",
+  },
+  playerContent: {
+    flex: 1,
+  },
+  // Player Stats Styles
+  playerStatsContainer: {
+    flex: 1,
+  },
+  playerStatsContent: {
+    paddingBottom: 30,
+  },
+  playerStatsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  playerStatsName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+  },
+  playerStatsJersey: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#8B4513",
+    backgroundColor: "#f8f9fa",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  playerStatsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    margin: 16,
+    justifyContent: "space-between",
+  },
+  statItem: {
+    width: "47%",
+    backgroundColor: "white",
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+    fontWeight: "600",
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
   },
   backButton: {
     position: "absolute",

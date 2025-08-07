@@ -1,0 +1,14 @@
+Server starting on 0.0.0.0:8080...
+
+2025/08/07 04:11:27 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[228.946ms] [33m[rows:0][35m SELECT * FROM "likes" WHERE post_id = 36[0m
+
+2025/08/07 04:11:27 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/bookmark.go:110 [33mSLOW SQL >= 200ms
+[0m[31;1m[231.359ms] [33m[rows:0][35m SELECT * FROM "bookmarks" WHERE post_id = 37[0m
+
+2025/08/07 04:11:27 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[255.760ms] [33m[rows:0][35m SELECT * FROM "likes" WHERE post_id = 37[0m
+
+2025/08/07 04:11:27 [32m/Users/Macry_Student/Development/Capstone/Kickoff-Playbook/my-app/backendTwo/handlers/like.go:108 [33mSLOW SQL >= 200ms
+[0m[31;1m[280.560ms] [33m[rows:1][35m SELECT * FROM "likes" WHERE post_id = 35[0m
+signal: killed

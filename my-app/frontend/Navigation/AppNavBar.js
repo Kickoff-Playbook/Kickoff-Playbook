@@ -26,6 +26,10 @@ import BetMGMInfo from "../screens/bettingApps/BetMGMInfo";
 import FanaticsInfo from "../screens/bettingApps/FanaticsInfo";
 import ESPNBETInfo from "../screens/bettingApps/ESPNBETInfo";
 import CaesarsInfo from "../screens/bettingApps/CaesarsInfo";
+
+// Import sport-specific betting screens
+import PrizePicksBaseball from "../screens/bettingApps/PrizePicksBaseball";
+import FanDuelBaseball from "../screens/bettingApps/FanDuelBaseball";
 //
 const Tabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -144,6 +148,20 @@ function BettingAppsStack() {
         options={{
           title: "Caesars",
           headerStyle: { backgroundColor: "#8B0000" },
+        }}
+      />
+      <Stack.Screen
+        name="PrizePicksBaseball"
+        component={PrizePicksBaseball}
+        options={{
+          headerShown: false, // Using custom header in component
+        }}
+      />
+      <Stack.Screen
+        name="FanDuelBaseball"
+        component={FanDuelBaseball}
+        options={{
+          headerShown: false, // Using custom header in component
         }}
       />
     </Stack.Navigator>
