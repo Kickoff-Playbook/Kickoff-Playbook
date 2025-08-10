@@ -19,12 +19,15 @@ const getBaseURL = () => {
 // Delete a post
 export const deletePost = async (postId, userId) => {
   try {
-    const response = await tryMultipleURLs(`/delete/post/${postId}?user_id=${userId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await tryMultipleURLs(
+      `/delete/post/${postId}?user_id=${userId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();

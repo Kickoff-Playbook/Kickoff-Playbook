@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"os"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 )

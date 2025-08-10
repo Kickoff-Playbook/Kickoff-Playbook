@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -19,7 +19,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../contexts/AuthContext";
 import {
   URL_CONFIGS,
@@ -39,114 +39,123 @@ import { toggleBookmark, getBookmarksByPost } from "../api/bookmark";
 import { uploadImage, convertImageToBase64 } from "../api/upload";
 import { deletePost } from "../api/posts";
 
-// Individual Post Item Component
-function PostItem({ post, onCommentPress, onLikePress, onBookmarkPress, onDeletePress, currentUser }) {
-  // Debug log for image URL
-  if (post.image_url) {
-    console.log("PostItem rendering with image_url:", post.image_url);
-  }
+// Individual Post Item Component - Memoized for better performance
+const PostItem = React.memo(
+  ({
+    post,
+    onCommentPress,
+    onLikePress,
+    onBookmarkPress,
+    onDeletePress,
+    currentUser,
+  }) => {
+    // Check if current user is the post creator
+    const isPostCreator =
+      currentUser &&
+      (currentUser.id === post.user_id || currentUser.id === post.UserID);
 
-  // Check if current user is the post creator
-  const isPostCreator = currentUser && (currentUser.id === post.user_id || currentUser.id === post.UserID);
+    // Format timestamp to readable format - memoized
+    const formattedTimestamp = React.useMemo(() => {
+      if (!post.created_at) return "Unknown time";
 
-  // Format timestamp to readable format
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return "Unknown time";
+      const date = new Date(post.created_at);
+      const now = new Date();
+      const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
 
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+      if (diffInHours < 1) return "Just now";
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      return date.toLocaleDateString();
+    }, [post.created_at]);
 
-    if (diffInHours < 1) return "Just now";
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return date.toLocaleDateString();
-  };
+    return (
+      <View style={styles.postContainer}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.usernameOne}>
+            {post.username || post.user_name || `User ${post.user_id}`}
+          </Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.timestamp}>{formattedTimestamp}</Text>
+            {isPostCreator && (
+              <TouchableOpacity
+                style={styles.deletePostButton}
+                onPress={() => onDeletePress(post)}
+              >
+                <Ionicons name="trash-outline" size={16} color="#ff4444" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
-  return (
-    <View style={styles.postContainer}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.usernameOne}>
-          {post.username || post.user_name || `User ${post.user_id}`}
-        </Text>
-        <View style={styles.headerRight}>
-          <Text style={styles.timestamp}>{formatTimestamp(post.created_at)}</Text>
-          {isPostCreator && (
-            <TouchableOpacity
-              style={styles.deletePostButton}
-              onPress={() => onDeletePress(post)}
+        {/* Content */}
+        <Text style={styles.contentText}>{post.content}</Text>
+
+        {/* Post Image - Lazy loaded */}
+        {post.image_url && (
+          <Image
+            source={{ uri: post.image_url }}
+            style={styles.postImage}
+            resizeMode="cover"
+            onError={(error) => {
+              console.error(
+                "Image failed to load:",
+                post.image_url,
+                error.nativeEvent.error
+              );
+            }}
+            onLoad={() => {
+              console.log("Image loaded successfully:", post.image_url);
+            }}
+            // Add loading optimization
+            fadeDuration={200}
+          />
+        )}
+
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => onLikePress(post)}
+          >
+            <Ionicons
+              name={post.isLiked ? "heart" : "heart-outline"}
+              size={20}
+              color={post.isLiked ? "#ff4444" : "#007bff"}
+            />
+            <Text style={[styles.actionText, post.isLiked && styles.likedText]}>
+              {post.likeCount || 0} {post.likeCount === 1 ? "Like" : "Likes"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => onBookmarkPress(post)}
+          >
+            <Ionicons
+              name={post.isBookmarked ? "bookmark" : "bookmark-outline"}
+              size={20}
+              color={post.isBookmarked ? "#ffa500" : "#007bff"}
+            />
+            <Text
+              style={[
+                styles.actionText,
+                post.isBookmarked && styles.bookmarkedText,
+              ]}
             >
-              <Ionicons name="trash-outline" size={16} color="#ff4444" />
-            </TouchableOpacity>
-          )}
+              Bookmark
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.action}
+            onPress={() => onCommentPress(post)}
+          >
+            <Ionicons name="chatbubble-outline" size={20} color="#007bff" />
+            <Text style={styles.actionText}>Comment</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Content */}
-      <Text style={styles.contentText}>{post.content}</Text>
-
-      {/* Post Image */}
-      {post.image_url && (
-        <Image
-          source={{ uri: post.image_url }}
-          style={styles.postImage}
-          resizeMode="cover"
-          onError={(error) => {
-            console.error("Image failed to load:", post.image_url, error.nativeEvent.error);
-          }}
-          onLoad={() => {
-            console.log("Image loaded successfully:", post.image_url);
-          }}
-        />
-      )}
-      {post.image_url && (
-        <Text style={styles.debugText}>Debug: Image URL exists: {post.image_url}</Text>
-      )}
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.action}
-          onPress={() => onLikePress(post)}
-        >
-          <Ionicons
-            name={post.isLiked ? "heart" : "heart-outline"}
-            size={20}
-            color={post.isLiked ? "#ff4444" : "#007bff"}
-          />
-          <Text style={[styles.actionText, post.isLiked && styles.likedText]}>
-            {post.likeCount || 0} {post.likeCount === 1 ? "Like" : "Likes"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.action}
-          onPress={() => onBookmarkPress(post)}
-        >
-          <Ionicons
-            name={post.isBookmarked ? "bookmark" : "bookmark-outline"}
-            size={20}
-            color={post.isBookmarked ? "#ffa500" : "#007bff"}
-          />
-          <Text
-            style={[
-              styles.actionText,
-              post.isBookmarked && styles.bookmarkedText,
-            ]}
-          >
-            Bookmark
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.action}
-          onPress={() => onCommentPress(post)}
-        >
-          <Ionicons name="chatbubble-outline" size={20} color="#007bff" />
-          <Text style={styles.actionText}>Comment</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
+    );
+  }
+);
 
 // Individual Comment Item Component
 function CommentItem({ comment, onDeleteComment }) {
@@ -247,8 +256,8 @@ export default function PostPage() {
     }
   };
 
-  // Fetch posts from your backend
-  const fetchPosts = async () => {
+  // Fetch posts from your backend - optimized with useCallback
+  const fetchPosts = useCallback(async () => {
     try {
       const response = await tryMultipleURLs("/get/posts");
 
@@ -259,14 +268,7 @@ export default function PostPage() {
       const data = await response.json();
       console.log("Fetched posts:", data); // Debug log
 
-      // Check if posts have image_url
-      data.forEach((post, index) => {
-        if (post.image_url) {
-          console.log(`Post ${index} has image_url:`, post.image_url);
-        }
-      });
-
-      // Fetch like and bookmark information for each post
+      // Fetch like and bookmark information for each post immediately
       const postsWithLikesAndBookmarks = await Promise.all(
         (data || []).map(async (post) => {
           try {
@@ -297,7 +299,7 @@ export default function PostPage() {
         })
       );
 
-      setPosts(postsWithLikesAndBookmarks); // Ensure it's always an array with like and bookmark data
+      setPosts(postsWithLikesAndBookmarks);
       setError(null);
     } catch (err) {
       console.error("Error fetching posts:", err);
@@ -306,7 +308,8 @@ export default function PostPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user?.id]);
+
   // Handle creating a new post
   const handleCreatePost = async () => {
     if (!newPostContent.trim() && !newPostImage) {
@@ -316,21 +319,24 @@ export default function PostPage() {
 
     try {
       setUploadingImage(true);
-      
+
       let imageUrl = "";
-      
+
       // Upload image if one is selected
       if (newPostImage) {
         try {
           console.log("Converting image to base64...");
           const base64Image = await convertImageToBase64(newPostImage);
-          
+
           console.log("Uploading image...");
           imageUrl = await uploadImage(base64Image, `post_${Date.now()}.jpg`);
           console.log("Image uploaded successfully:", imageUrl);
         } catch (imageError) {
           console.error("Failed to upload image:", imageError);
-          Alert.alert("Upload Error", "Failed to upload image. Post will be created without the image.");
+          Alert.alert(
+            "Upload Error",
+            "Failed to upload image. Post will be created without the image."
+          );
           imageUrl = ""; // Continue without image
         }
       }
@@ -376,27 +382,10 @@ export default function PostPage() {
     }
   };
 
-  // Handle opening comment modal
-  const handleCommentPress = async (post) => {
-    setSelectedPost(post);
-    setCommentContent("");
-    setSelectedImage(null);
-    setLoadingComments(true);
-    setShowCommentModal(true);
-
-    try {
-      const postComments = await getCommentsByPost(post.id);
-      setComments(postComments || []);
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      // Don't show error alert, just show empty comments
-      setComments([]);
-    } finally {
-      setLoadingComments(false);
-    }
-  };
-
-  // Handle image selection for create post
+  // Fetch posts when component mounts
+  useEffect(() => {
+    fetchPosts();
+  }, []);
   const handlePostImageSelect = () => {
     Alert.alert("Select Image", "Choose an option", [
       { text: "Cancel", style: "cancel" },
@@ -411,14 +400,21 @@ export default function PostPage() {
       // Request permissions
       if (source === "camera") {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission needed', 'Camera permission is required to take photos');
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission needed",
+            "Camera permission is required to take photos"
+          );
           return;
         }
       } else {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission needed', 'Photo library permission is required to select photos');
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission needed",
+            "Photo library permission is required to select photos"
+          );
           return;
         }
       }
@@ -442,8 +438,8 @@ export default function PostPage() {
         setNewPostImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to select image. Please try again.");
     }
   };
 
@@ -467,14 +463,21 @@ export default function PostPage() {
       // Request permissions
       if (source === "camera") {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission needed', 'Camera permission is required to take photos');
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission needed",
+            "Camera permission is required to take photos"
+          );
           return;
         }
       } else {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permission needed', 'Photo library permission is required to select photos');
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission needed",
+            "Photo library permission is required to select photos"
+          );
           return;
         }
       }
@@ -498,8 +501,8 @@ export default function PostPage() {
         setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image. Please try again.');
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to select image. Please try again.");
     }
   };
 
@@ -517,19 +520,25 @@ export default function PostPage() {
 
     try {
       let imageUrl = "";
-      
+
       // Upload image if one is selected
       if (selectedImage) {
         try {
           console.log("Converting comment image to base64...");
           const base64Image = await convertImageToBase64(selectedImage);
-          
+
           console.log("Uploading comment image...");
-          imageUrl = await uploadImage(base64Image, `comment_${Date.now()}.jpg`);
+          imageUrl = await uploadImage(
+            base64Image,
+            `comment_${Date.now()}.jpg`
+          );
           console.log("Comment image uploaded successfully:", imageUrl);
         } catch (imageError) {
           console.error("Failed to upload comment image:", imageError);
-          Alert.alert("Upload Error", "Failed to upload image. Comment will be created without the image.");
+          Alert.alert(
+            "Upload Error",
+            "Failed to upload image. Comment will be created without the image."
+          );
           imageUrl = ""; // Continue without image
         }
       }
@@ -597,99 +606,128 @@ export default function PostPage() {
     );
   };
 
-  // Handle liking/unliking a post
-  const handleLikePress = async (post) => {
-    try {
-      const result = await toggleLike(post.id, user?.id || 1);
+  // Handle liking/unliking a post - optimized with useCallback
+  const handleLikePress = useCallback(
+    async (post) => {
+      try {
+        const result = await toggleLike(post.id, user?.id || 1);
 
-      // Update the posts state to reflect the like status
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id === post.id
-            ? {
-                ...p,
-                isLiked: result.liked,
-                likeCount: result.liked
-                  ? (p.likeCount || 0) + 1
-                  : Math.max((p.likeCount || 0) - 1, 0),
-              }
-            : p
-        )
-      );
-    } catch (err) {
-      console.error("Error toggling like:", err);
-      Alert.alert("Error", "Failed to update like. Please try again.");
-    }
-  };
+        // Update the posts state to reflect the like status
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.id === post.id
+              ? {
+                  ...p,
+                  isLiked: result.liked,
+                  likeCount: result.liked
+                    ? (p.likeCount || 0) + 1
+                    : Math.max((p.likeCount || 0) - 1, 0),
+                }
+              : p
+          )
+        );
+      } catch (err) {
+        console.error("Error toggling like:", err);
+        Alert.alert("Error", "Failed to update like. Please try again.");
+      }
+    },
+    [user?.id]
+  );
 
-  // Handle bookmarking/unbookmarking a post
-  const handleBookmarkPress = async (post) => {
-    try {
-      const result = await toggleBookmark(post.id, user?.id || 1);
+  // Handle bookmarking/unbookmarking a post - optimized with useCallback
+  const handleBookmarkPress = useCallback(
+    async (post) => {
+      try {
+        const result = await toggleBookmark(post.id, user?.id || 1);
 
-      // Update the posts state to reflect the bookmark status
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id === post.id
-            ? {
-                ...p,
-                isBookmarked: result.bookmarked,
-              }
-            : p
-        )
-      );
-    } catch (err) {
-      console.error("Error toggling bookmark:", err);
-      Alert.alert("Error", "Failed to update bookmark. Please try again.");
-    }
-  };
+        // Update the posts state to reflect the bookmark status
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.id === post.id
+              ? {
+                  ...p,
+                  isBookmarked: result.bookmarked,
+                }
+              : p
+          )
+        );
+      } catch (err) {
+        console.error("Error toggling bookmark:", err);
+        Alert.alert("Error", "Failed to update bookmark. Please try again.");
+      }
+    },
+    [user?.id]
+  );
 
-  // Handle deleting a post
-  const handleDeletePress = async (post) => {
-    Alert.alert(
-      "Delete Post",
-      "Are you sure you want to delete this post? This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deletePost(post.id, user?.id || 1);
-
-              // Remove the deleted post from the posts state
-              setPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
-
-              Alert.alert("Success", "Post deleted successfully!");
-            } catch (err) {
-              console.error("Error deleting post:", err);
-              Alert.alert(
-                "Error",
-                err.message || "Failed to delete post. Please try again."
-              );
-            }
+  // Handle deleting a post - optimized with useCallback
+  const handleDeletePress = useCallback(
+    async (post) => {
+      Alert.alert(
+        "Delete Post",
+        "Are you sure you want to delete this post? This action cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
           },
-        },
-      ]
-    );
-  };
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deletePost(post.id, user?.id || 1);
 
-  // Fetch posts when component mounts
+                // Remove the deleted post from the posts state
+                setPosts((prevPosts) =>
+                  prevPosts.filter((p) => p.id !== post.id)
+                );
+
+                Alert.alert("Success", "Post deleted successfully!");
+              } catch (err) {
+                console.error("Error deleting post:", err);
+                Alert.alert(
+                  "Error",
+                  err.message || "Failed to delete post. Please try again."
+                );
+              }
+            },
+          },
+        ]
+      );
+    },
+    [user?.id]
+  );
+
+  // Handle opening comment modal - optimized with useCallback
+  const handleCommentPress = useCallback(async (post) => {
+    setSelectedPost(post);
+    setCommentContent("");
+    setSelectedImage(null);
+    setLoadingComments(true);
+    setShowCommentModal(true);
+
+    try {
+      const postComments = await getCommentsByPost(post.id);
+      setComments(postComments || []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      // Don't show error alert, just show empty comments
+      setComments([]);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, []);
 
   // Fetch posts when component mounts
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  // Handle pull-to-refresh
-  const onRefresh = () => {
+  // Handle pull-to-refresh - optimized with useCallback
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchPosts();
-  };
+  }, [fetchPosts]);
 
   if (loading) {
     return (
@@ -822,18 +860,21 @@ export default function PostPage() {
               <Text style={styles.modalCancelButton}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Create Post</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleCreatePost}
-              disabled={uploadingImage || (!newPostContent.trim() && !newPostImage)}
+              disabled={
+                uploadingImage || (!newPostContent.trim() && !newPostImage)
+              }
             >
               <Text
                 style={[
                   styles.modalPostButton,
-                  (uploadingImage || (!newPostContent.trim() && !newPostImage)) &&
+                  (uploadingImage ||
+                    (!newPostContent.trim() && !newPostImage)) &&
                     styles.disabledButtonText,
                 ]}
               >
-                {uploadingImage ? "Uploading..." : "Post"}
+                {uploadingImage ? "Creating..." : "Post"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -842,10 +883,10 @@ export default function PostPage() {
             {uploadingImage && (
               <View style={styles.uploadingContainer}>
                 <ActivityIndicator size="small" color="#007AFF" />
-                <Text style={styles.uploadingText}>Uploading image...</Text>
+                <Text style={styles.uploadingText}>Creating post...</Text>
               </View>
             )}
-            
+
             <View style={styles.textInputContainer}>
               <TextInput
                 style={styles.postInput}
