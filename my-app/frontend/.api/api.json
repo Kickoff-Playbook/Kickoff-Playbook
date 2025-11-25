@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "sportradar-baseball",
+      "source": "@sportradar-baseball/v8#33p7k2omb7z5k0v",
+      "integrity": "sha512-iK1jgxi7+4DXycUfFpEA6FBXfA1aZcrQh4WKbk8kP6/+v803mZGvSdsWur7txOyklHAoOTG3SDLxQMMFgh7lMA==",
+      "installerVersion": "6.1.3"
+    }
+  ]
+}
